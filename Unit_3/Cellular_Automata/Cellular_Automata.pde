@@ -1,14 +1,17 @@
-int[][] cells;
-int n = 100;
+color[][] cells;
+int n = 20;
 float cellSize;
 float padding = 0;
 int framerate = 10;
 
 void setup(){
   size(800, 800);
-  cellSize = (width-2*padding)/n;
-  cells = new int[n][n];
   frameRate(framerate);
+
+  colorMode(HSB, 1.0, 1.0, 1.0);
+
+  cells = new color[n][n];
+  cellSize = (width-2*padding)/n;
 
   setCellValuesRandomly();
   drawCells();
@@ -16,10 +19,46 @@ void setup(){
 }
 
 void draw() {
-  background(0,0,255);
+  // background(2.0/3, 1.0, 1.0);
+  background(0);
 
-  updateCells();
+  // updateCells();
   drawCells();
+}
+
+void updateCells() {
+  color[][] nextCells = new color[n][n];
+
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
+
+    }
+  }
+  
+
+  // int liveNeighbours;
+  //     liveNeighbours = countLiveNeighbours(i, j);
+
+  //     if (cells[i][j] == 1) {
+  //       if (liveNeighbours == 2 || liveNeighbours == 3)
+  //         nextCells[i][j] = 1;
+  //       else
+  //         nextCells[i][j] = 0;
+  //     }
+  //     else {
+  //       if (liveNeighbours == 3)
+  //         nextCells[i][j] = 1;
+  //       else
+  //         nextCells[i][j] = 0;
+  //     }
+  //   }
+  // }
+
+  for (int i = 0; i < n; i++) {
+    for (int j = 0; j < n; j++) {
+      cells[i][j] = nextCells[i][j];
+    }
+  }
 }
 
 void drawCells() {
@@ -28,43 +67,12 @@ void drawCells() {
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < n; j++) {
       float x = padding + j*cellSize;
-      if (cells[i][j] == 1)
-        fill(255);
-      else
-        fill(0);
+
+      fill(cells[i][j]);
         
       rect(x, y, cellSize, cellSize);
     }
     y += cellSize;
-  }
-}
-
-void updateCells() {
-  int liveNeighbours;
-  int[][] nextCells = new int[n][n];
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < n; j++) {
-      liveNeighbours = countLiveNeighbours(i, j);
-
-      if (cells[i][j] == 1) {
-        if (liveNeighbours == 2 || liveNeighbours == 3)
-          nextCells[i][j] = 1;
-        else
-          nextCells[i][j] = 0;
-      }
-      else {
-        if (liveNeighbours == 3)
-          nextCells[i][j] = 1;
-        else
-          nextCells[i][j] = 0;
-      }
-    }
-  }
-
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < n; j++) {
-      cells[i][j] = nextCells[i][j];
-    }
   }
 }
 
@@ -87,12 +95,8 @@ void setCellValuesRandomly() {
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < n; j++) {
       float x = random(0,1);
-      
-      if (x < 0.3)
-        cells[i][j] = 1;
-        
-      else
-        cells[i][j] = 0;
+
+      cells[i][j] = color(x, 0.25, 0.5);
     }
   }
 }
