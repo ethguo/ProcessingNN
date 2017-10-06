@@ -1,6 +1,7 @@
-color[][] cells;
-int n = 20;
-float cellSize;
+Cell[][] cells;
+int gridWidth = 20;
+int gridHeight = 20;
+float cellWidth, cellHeight;
 float padding = 20;
 float framerate = 1/2.0;
 
@@ -10,8 +11,9 @@ void setup(){
 
   colorMode(HSB, 2*PI, 1.0, 1.0);
 
-  cells = new color[n][n];
-  cellSize = (width-2*padding)/n;
+  cells = new Cell[gridHeight][gridWidth];
+  cellWidth = (width-2*padding)/gridWidth;
+  cellHeight = (height-2*padding)/gridHeight;
 
   initializeCells();
   drawCells();
@@ -27,10 +29,10 @@ void draw() {
 }
 
 void updateCells() {
-  color[][] nextCells = new color[n][n];
+  Cell[][] nextCells = new Cell[gridHeight][gridWidth];
 
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < n; j++) {
+  for (int j = 0; j < gridWidth; j++) {
+    for (int i = 0; i < gridHeight; i++) {
       nextCells[i][j] = updateCell(i, j);
     }
   }
@@ -54,8 +56,8 @@ void updateCells() {
   //   }
   // }
 
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < n; j++) {
+  for (int i = 0; i < gridHeight; i++) {
+    for (int j = 0; j < gridWidth; j++) {
       cells[i][j] = nextCells[i][j];
     }
   }
@@ -106,36 +108,23 @@ color updateCell(int i, int j) {
 
 void drawCells() {
   float y = padding;
-
-  strokeWeight(2);
   
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < n; j++) {
-      float x = padding + j*cellSize;
+  for (int i = 0; i < gridHeight; i++) {
+    for (int j = 0; j < gridWidth; j++) {
+      float x = padding + j*cellWidth;
 
       fill(cells[i][j]);
-      color c2 = color((hue(cells[i][j]) + 1) % 2*PI, 1.0, 1.0);
-      stroke(c2);
-
-      rect(x, y, cellSize-4, cellSize-4);
+      
+      rect(x, y, cellWidth, cellHeight);
     }
-    y += cellSize;
+    y += cellHeight;
   }
 }
 
 void initializeCells() {
-  for (int i = 0; i < n; i++) {
-    for (int j = 0; j < n; j++) {
-      float x = random(0, 1);
-      if (x < 0.01) {
-        float hue = random(0,2*PI);
-
-        cells[i][j] = color(hue, 1.0, 1.0);
-      }
-      else {
-        cells[i][j] = color(0);
-      }
-    }
+  for (int i = 0; i < gridHeight; i++) {
+    float state = round(random(0, 1));
+    cells[i][0] = new Cell(state);
   }
 }
 
