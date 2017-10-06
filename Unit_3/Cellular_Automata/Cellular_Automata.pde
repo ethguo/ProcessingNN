@@ -1,7 +1,7 @@
 color[][] cells;
 int n = 20;
 float cellSize;
-float padding = 0;
+float padding = 20;
 float framerate = 1/2.0;
 
 void setup(){
@@ -13,14 +13,14 @@ void setup(){
   cells = new color[n][n];
   cellSize = (width-2*padding)/n;
 
-  setCellValuesRandomly();
+  initializeCells();
   drawCells();
 
+  background(0);
 }
 
 void draw() {
-  // background(2.0/3, 1.0, 1.0);
-  background(0);
+  // background(2.0/3 * PI, 1.0, 1.0);
 
   updateCells();
   drawCells();
@@ -77,7 +77,6 @@ color updateCell(int i, int j) {
           neighbour = cells[i + deltai][j + deltaj];
           neighbourAngle = atan2(-deltai, deltaj);
           neighbourHue = hue(neighbour);
-          neighbourSaturation = saturation(neighbour);
 
           angleDifference = neighbourAngle - neighbourHue;
           if (angleDifference > PI)
@@ -87,13 +86,13 @@ color updateCell(int i, int j) {
 
           // weight = 1 - angleDifference / PI;
 
-          weight = neighbourSaturation;
+          weight = saturation(neighbour);
 
           if (weight != 0) {
             nAverage += 1;
-            hueAverage.add(PVector.fromAngle(neighbourHue).mult(weight));
+            hueAverage.add(PVector.fromAngle(neighbourHue));
             saturationSum += weight;
-            brightnessSum += weight;
+            // brightnessSum += weight;
           }
 
         }
@@ -102,25 +101,29 @@ color updateCell(int i, int j) {
     }
   }
   float nextHue = hueAverage.heading();
-  return color(nextHue, saturationSum/nAverage, brightnessSum/nAverage);
+  return color(nextHue, saturationSum/nAverage, 1.0);
 }
 
 void drawCells() {
   float y = padding;
+
+  strokeWeight(2);
   
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < n; j++) {
       float x = padding + j*cellSize;
 
       fill(cells[i][j]);
-        
-      rect(x, y, cellSize, cellSize);
+      color c2 = color((hue(cells[i][j]) + 1) % 2*PI, 1.0, 1.0);
+      stroke(c2);
+
+      rect(x, y, cellSize-4, cellSize-4);
     }
     y += cellSize;
   }
 }
 
-void setCellValuesRandomly() {
+void initializeCells() {
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < n; j++) {
       float x = random(0, 1);
