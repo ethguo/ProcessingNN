@@ -2,13 +2,13 @@ color[][] cells;
 int n = 20;
 float cellSize;
 float padding = 0;
-int framerate = 10;
+float framerate = 1/2.0;
 
 void setup(){
   size(800, 800);
   frameRate(framerate);
 
-  colorMode(HSB, 1.0, 1.0, 1.0);
+  colorMode(HSB, 2*PI, 1.0, 1.0);
 
   cells = new color[n][n];
   cellSize = (width-2*padding)/n;
@@ -22,7 +22,7 @@ void draw() {
   // background(2.0/3, 1.0, 1.0);
   background(0);
 
-  // updateCells();
+  updateCells();
   drawCells();
 }
 
@@ -31,7 +31,7 @@ void updateCells() {
 
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < n; j++) {
-
+      nextCells[i][j] = updateCell(i, j);
     }
   }
   
@@ -61,6 +61,50 @@ void updateCells() {
   }
 }
 
+color updateCell(int i, int j) {
+  color neighbour;
+  PVector hueAverage = new PVector();
+  float saturationSum = 0;
+  float brightnessSum = 0;
+  float nAverage = 0;
+  // float nextSaturation = 0;
+  // float nextBrightness = 0;
+  float neighbourAngle, neighbourHue, neighbourSaturation, angleDifference, weight;
+  for (int deltai = -1; deltai <= 1; deltai++) {
+    for (int deltaj = -1; deltaj <= 1; deltaj++) {
+      if (deltai != 0 || deltaj != 0) {
+        try {
+          neighbour = cells[i + deltai][j + deltaj];
+          neighbourAngle = atan2(-deltai, deltaj);
+          neighbourHue = hue(neighbour);
+          neighbourSaturation = saturation(neighbour);
+
+          angleDifference = neighbourAngle - neighbourHue;
+          if (angleDifference > PI)
+            angleDifference -= 2*PI;
+          else if (angleDifference < -PI)
+            angleDifference += 2*PI;
+
+          // weight = 1 - angleDifference / PI;
+
+          weight = neighbourSaturation;
+
+          if (weight != 0) {
+            nAverage += 1;
+            hueAverage.add(PVector.fromAngle(neighbourHue).mult(weight));
+            saturationSum += weight;
+            brightnessSum += weight;
+          }
+
+        }
+        catch (ArrayIndexOutOfBoundsException e) { }
+      }
+    }
+  }
+  float nextHue = hueAverage.heading();
+  return color(nextHue, saturationSum/nAverage, brightnessSum/nAverage);
+}
+
 void drawCells() {
   float y = padding;
   
@@ -76,27 +120,18 @@ void drawCells() {
   }
 }
 
-int countLiveNeighbours(int i, int j) {
-  int liveNeighbours = 0;
-  for (int deltai = -1; deltai <= 1; deltai++) {
-    for (int deltaj = -1; deltaj <= 1; deltaj++) {
-      if (deltai != 0 || deltaj != 0) {
-        try {
-          liveNeighbours += cells[i + deltai][j + deltaj];
-        }
-        catch (ArrayIndexOutOfBoundsException e) { }
-      }
-    }
-  }
-  return liveNeighbours;
-}
-
 void setCellValuesRandomly() {
   for (int i = 0; i < n; i++) {
     for (int j = 0; j < n; j++) {
-      float x = random(0,1);
+      float x = random(0, 1);
+      if (x < 0.01) {
+        float hue = random(0,2*PI);
 
-      cells[i][j] = color(x, 0.25, 0.5);
+        cells[i][j] = color(hue, 1.0, 1.0);
+      }
+      else {
+        cells[i][j] = color(0);
+      }
     }
   }
 }
