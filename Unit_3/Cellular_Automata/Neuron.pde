@@ -1,13 +1,12 @@
 class Cell {
   float activation;
+  Cell[][] cells;
 
   Cell() { }
 
   Cell(float activation) {
     this.activation = activation;
   }
-
-  void update() { }
 
   color getColor() {
     return color(activation);
@@ -31,8 +30,7 @@ class Neuron extends Cell {
     this.response = response;
   }
 
-  void update() {
-
+  void forward(Cell a, Cell b, Cell c) {
   }
 
   color getColor() {
