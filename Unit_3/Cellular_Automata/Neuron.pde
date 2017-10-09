@@ -7,12 +7,12 @@ class Cell {
 
   Cell() { }
 
-  Cell(float activation) {
-    this.activation = activation;
-  }
-
   float getActivation() {
     return activation;
+  }
+
+  void setActivation(float activation) {
+    this.activation = activation;
   }
 
   float getResponse(int i) {
@@ -41,17 +41,12 @@ class Neuron extends Cell {
   float activation;
   float[] response;
 
-  // If no response array is provided, initialize it randomly.
   Neuron() {
+    // Initialize the response array randomly
     float[] response = new float[3];
     for (int i = 0; i < 3; i++) {
       response[i] = constrain(randomGaussian(), -1, 1);
     }
-    this.response = response;
-    activation = 0;
-  }
-
-  Neuron(float[] response) {
     this.response = response;
     activation = 0;
   }
@@ -98,6 +93,7 @@ class Neuron extends Cell {
     for (int i = 0; i < 3; i++) {
       nodeDelta += children[i].nodeDelta * response[i];
     }
+    // Negative?
     nodeDelta *= sigmoidPrime(activation); // Chain on derivative of activation function (sigmoid).
   }
 }

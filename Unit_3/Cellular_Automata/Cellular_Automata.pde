@@ -1,44 +1,66 @@
 /* PARAMETERS */
-int numCols = 20;
-int numRows = 5;
-float padding = 0;
-float bottomPadding = 100;
-int outlineWeight = 4;
+String dataFile = "dataset1.json";
+int numCols = 20; // Set to the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
+int numRows = 4;
+
 float framerate = 60;
+
+int outlineWeight = 4;
+int cellWidth = 60;
+int cellHeight = 60;
 boolean showText = true;
-boolean coloredFill = true;
-float trainingRate = 3;
+boolean coloredFill = false;
+
+float trainingRate = 10;
 /* END OF PARAMETERS */
 
+JSONObject dataObject;
+JSONArray data;
+int dataSize;
 Cell[][] cells;
-float cellWidth, cellHeight;
 int iterationRow, phase;
 DummyCell dummyCell;
 
-void setup() {
-  size(1200, 600);
-  frameRate(framerate);
+void settings() {
+  int windowWidth = numCols * cellWidth;
+  int windowHeight = numRows * cellHeight;
+  size(windowWidth, windowHeight);
+  noSmooth(); // Turn off antialiasing, to make borders look nicer (because everything is vertical/horizontal).
+}
 
+void setup() {
   // Drawing settings
+  frameRate(framerate);
   colorMode(RGB, 1.0, 1.0, 1.0);
   strokeWeight(outlineWeight);
   textFont(createFont("Consolas", 11));
 
+  dataObject = loadJSONObject(dataFile);
+  data = dataObject.getJSONArray("data");
+  dataSize = data.size();
+
   // Initialize variables
   cells = new Cell[numRows][numCols];
-  cellWidth = (width - 2 * padding) / numCols;
-  cellHeight = (height - 2 * padding - bottomPadding) / numRows;
   dummyCell = new DummyCell(); // Initialize singleton DummyCell
   iterationRow = 0;
   phase = 1;
 
-  initializeNeurons();
+  initializeCells();
   updateStimuli();
 }
 
 void draw() {
   updateCells();
   drawCells();
+}
+
+void keyPressed() {
+  if (key == 'f' || key == 'F') {
+    frameRate(120);
+  }
+  else if (key == 's' || key == 'S') {
+    frameRate(2);
+  }
 }
 
 void updateCells() {
@@ -63,27 +85,41 @@ void updateCells() {
   }
 }
 
-void initializeNeurons() {
-  // Initialize neurons
-  int row;
+void initializeCells() {
+  int row = 0;
+
+  // Initialize top row of stimuli Cells
+  for (int col = 0; col < numCols; col++) {
+    cells[row][col] = new Cell();
+  }
+
+  // Initialize Neurons
   for (row = 1; row < numRows-1; row++) {
     for (int col = 0; col < numCols; col++) {
       cells[row][col] = new Neuron();
     }
   }
 
+  // Initialize bottom row of OutputNeurons
   for (int col = 0; col < numCols; col++) {
     cells[row][col] = new OutputNeuron();
   }
 }
 
 void updateStimuli() {
+  int i = int(random(dataSize));
+  JSONObject dataItem = data.getJSONObject(i);
+  JSONArray inputs = dataItem.getJSONArray("input");
+  JSONArray outputs = dataItem.getJSONArray("output");
+
   // Initialize stimuli (in row 0)
   for (int col = 0; col < numCols; col++) {
-    float x = round(random(0, 1));
-    cells[0][col] = new Cell(x);
+    float input = inputs.getFloat(col);
+    float output = outputs.getFloat(col);
+    cells[0][col].setActivation(input);
 
-    ((OutputNeuron) cells[numRows-1][col]).setTarget(1 - x); // Temporarily using input as target output >:)
+    OutputNeuron outputNeuron = (OutputNeuron) cells[numRows-1][col];
+    outputNeuron.setTarget(output); // Temporarily using input as target output >:)
   }
 }
 
@@ -142,8 +178,8 @@ void drawCells() {
     for (int col = 0; col < numCols; col++) {
       Cell cell = cells[row][col];
 
-      float x = padding + col * cellWidth;
-      float y = padding + row * cellHeight;
+      float x = col * cellWidth + outlineWeight / 2;
+      float y = row * cellHeight + outlineWeight / 2;
 
       color strokeColor = cell.getStrokeColor();
       color fillColor;
