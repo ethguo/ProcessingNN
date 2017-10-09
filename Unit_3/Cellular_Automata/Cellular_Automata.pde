@@ -1,10 +1,10 @@
 /* PARAMETERS */
 int numCols = 20;
-int numRows = 15;
+int numRows = 5;
 float padding = 0;
-float bottomPadding = 60;
+float bottomPadding = 100;
 int outlineWeight = 4;
-float framerate = 30;
+float framerate = 2;
 boolean showText = true;
 boolean coloredFill = false;
 float trainingRate = 3;
@@ -15,8 +15,10 @@ float cellWidth, cellHeight;
 int iterationRow;
 DummyCell dummyCell;
 
+int f = 1;
+
 void setup() {
-  size(1200, 960);
+  size(1200, 600);
   frameRate(framerate);
 
   // Drawing settings
@@ -52,31 +54,32 @@ void draw() {
 
 void updateCells() {
   for (int col = 0; col < numCols; col++) {
-    Cell[] neighbours = getNeighbours(iterationRow, col);
-    cells[iterationRow][col].forward(neighbours);
+    Cell[] parents = getAdjacent(iterationRow - 1, col);
+    cells[iterationRow][col].forward(parents);
   }
 }
 
-Cell[] getNeighbours(int row, int col) {
-  Cell[] neighbours = new Cell[3];
+Cell[] getAdjacent(int row, int col) {
+  /* Call on (row - 1, col) to get "parents". Call on (row+1, col) to get "children". */
+  Cell[] adjacent = new Cell[3];
 
   try {
-    neighbours[0] = cells[row-1][col-1];
+    adjacent[0] = cells[row][col-1];
   }
   catch (ArrayIndexOutOfBoundsException e) {
-    neighbours[0] = dummyCell;
+    adjacent[0] = dummyCell;
   }
 
-  neighbours[1] = cells[row-1][col];
+  adjacent[1] = cells[row][col];
 
   try {
-    neighbours[2] = cells[row-1][col+1];
+    adjacent[2] = cells[row][col+1];
   }
   catch (ArrayIndexOutOfBoundsException e) {
-    neighbours[2] = dummyCell;
+    adjacent[2] = dummyCell;
   }
 
-  return neighbours;
+  return adjacent;
 }
 
 void drawCells() {
@@ -143,31 +146,61 @@ float sigmoidPrime(float x) {
 void backpropagate() {
   float totalCost = 0;
   // float[] errors = new float[numCols];
-  float target, out, error, prevOut, dEdW;
-  Cell[] neighbours;
+  float target, out, error, nodeDelta, dEdW, prevOut;
+  Cell[] parents;
+  Cell[] children;
+
+  // Special case for the bottom row
+  int row = numRows - 1;
   for (int col = 0; col < numCols; col++) {
     // Temporarily using input as target output >:)
     target = cells[0][col].getActivation();
-    out = cells[numRows-1][col].getActivation();
-
+    out = cells[row][col].getActivation();
     error = target - out;
 
-    neighbours = getNeighbours(numRows-1, col);
+    nodeDelta = -error * out * (1 - out);
+    cells[row][col].nodeDelta = nodeDelta;
+
+    parents = getAdjacent(row - 1, col);
     for (int i = 0; i < 3; i++) {
-      prevOut = neighbours[i].getActivation();
+      prevOut = parents[i].getActivation();
 
-      dEdW = -error * out * (1 - out) * prevOut;
+      dEdW = nodeDelta * prevOut;
 
-      cells[numRows-1][col].updateWeight(i, dEdW * trainingRate);
+      cells[row][col].updateWeight(i, dEdW * trainingRate);
     }
 
     totalCost += pow(error, 2);
   }
+
+  for (row = numRows - 2; row > 1; row--) {
+    for (int col = 0; col < numCols; col++) {
+      out = cells[row][col].getActivation();
+      nodeDelta = 0;
+
+      children = getAdjacent(row + 1, col);
+      for (int i = 0; i < 3; i++) {
+        nodeDelta += children[i].nodeDelta * cells[row][col].getResponse(i);
+      }
+
+      nodeDelta *= out * (1 - out);
+
+      cells[row][col].nodeDelta = nodeDelta;
+
+      parents = getAdjacent(row - 1, col);
+      for (int i = 0; i < 3; i++) {
+        prevOut = parents[i].getActivation();
+
+        dEdW = nodeDelta * prevOut;
+
+        cells[row][col].updateWeight(i, dEdW * trainingRate);
+      }
+    }
+  }
+
+
   totalCost /= 2;
   print(totalCost);
-
-  for (int col = 0; col < numCols; col++) {
-  }
 
   iterationRow = 1;
 }

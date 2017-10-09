@@ -1,6 +1,6 @@
 class Cell {
   float activation;
-  Cell[][] cells;
+  float nodeDelta;
 
   Cell() { }
 
