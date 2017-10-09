@@ -1,20 +1,8 @@
 void setup() {
-  float a1 = radians(30);
-  float a2 = radians(60);
+  int[] a = {1, 3, 5, 7, 9};
 
-  // float a1mod = a1 % 2*PI;
-  // float a2mod = a2 % 2*PI;
-
-  float a = a1 - a2;
-
-  if (a > PI)
-    a -= 2*PI;
-  else if (a < -PI)
-    a += 2*PI;
-
-  println(degrees(a1));
-  println(degrees(a2));
-  println(degrees(a));
+  int x = 0;
+  printArray(subset(a, x-1, 3));
 
   exit();
 }
