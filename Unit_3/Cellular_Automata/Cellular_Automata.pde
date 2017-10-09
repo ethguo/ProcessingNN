@@ -4,39 +4,39 @@ int numRows = 15;
 float padding = 0;
 float bottomPadding = 60;
 int outlineWeight = 4;
-float framerate = 1;
+float framerate = 30;
 boolean showText = true;
 boolean coloredFill = false;
+float trainingRate = 3;
 /* END OF PARAMETERS */
 
 Cell[][] cells;
 float cellWidth, cellHeight;
 int iterationRow;
-
 DummyCell dummyCell;
 
 void setup() {
   size(1200, 960);
   frameRate(framerate);
-  // colorMode(HSB, 2*PI, 1.0, 1.0);
 
   // Drawing settings
   colorMode(RGB, 1.0, 1.0, 1.0);
   strokeWeight(outlineWeight);
   textFont(createFont("Consolas", 11));
 
+  // Initialize variables
   cellWidth = (width - 2 * padding) / numCols;
   cellHeight = (height - 2 * padding - bottomPadding) / numRows;
-
   dummyCell = new DummyCell(); // Initialize singleton DummyCell
   iterationRow = 1;
 
   initializeCells();
 
-  background(0);
 }
 
 void draw() {
+  background(0);
+
   print(iterationRow);
 
   updateCells();
@@ -44,10 +44,10 @@ void draw() {
 
   iterationRow += 1;
   if (iterationRow == numRows) {
-    noLoop();
+    println();
+    backpropagate();
+    println();
   }
-
-  println();
 }
 
 void updateCells() {
@@ -61,16 +61,16 @@ Cell[] getNeighbours(int row, int col) {
   Cell[] neighbours = new Cell[3];
 
   try {
-    neighbours[0] = cells[row - 1][col - 1];
+    neighbours[0] = cells[row-1][col-1];
   }
   catch (ArrayIndexOutOfBoundsException e) {
     neighbours[0] = dummyCell;
   }
 
-  neighbours[1] = cells[row - 1][col];
+  neighbours[1] = cells[row-1][col];
 
   try {
-    neighbours[2] = cells[row - 1][col + 1];
+    neighbours[2] = cells[row-1][col+1];
   }
   catch (ArrayIndexOutOfBoundsException e) {
     neighbours[2] = dummyCell;
@@ -133,4 +133,41 @@ void initializeCells() {
 
 float sigmoid(float x) {
   return 1 / (1 + exp(-x));
+}
+
+float sigmoidPrime(float x) {
+  float expNegX = exp(-x);
+  return expNegX / pow(1 + expNegX, 2);
+}
+
+void backpropagate() {
+  float totalCost = 0;
+  // float[] errors = new float[numCols];
+  float target, out, error, prevOut, dEdW;
+  Cell[] neighbours;
+  for (int col = 0; col < numCols; col++) {
+    // Temporarily using input as target output >:)
+    target = cells[0][col].getActivation();
+    out = cells[numRows-1][col].getActivation();
+
+    error = target - out;
+
+    neighbours = getNeighbours(numRows-1, col);
+    for (int i = 0; i < 3; i++) {
+      prevOut = neighbours[i].getActivation();
+
+      dEdW = -error * out * (1 - out) * prevOut;
+
+      cells[numRows-1][col].updateWeight(i, dEdW * trainingRate);
+    }
+
+    totalCost += pow(error, 2);
+  }
+  totalCost /= 2;
+  print(totalCost);
+
+  for (int col = 0; col < numCols; col++) {
+  }
+
+  iterationRow = 1;
 }

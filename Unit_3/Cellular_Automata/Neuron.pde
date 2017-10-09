@@ -25,6 +25,8 @@ class Cell {
   color getFillColor() {
     return color(activation);
   }
+
+  void updateWeight(int i, float delta) { }
 }
 
 class DummyCell extends Cell {
@@ -67,6 +69,10 @@ class Neuron extends Cell {
       sum += neighbours[i].getActivation() * response[i];
     }
     activation = sigmoid(sum);
+  }
+
+  void updateWeight(int i, float delta) {
+    response[i] -= delta;
   }
 
   color getStrokeColor() {
