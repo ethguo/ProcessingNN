@@ -1,8 +1,12 @@
 /* PARAMETERS */
 int numCols = 20;
-int numRows = 20;
-float padding = 20;
+int numRows = 15;
+float padding = 0;
+float bottomPadding = 60;
+int outlineWeight = 4;
 float framerate = 1;
+boolean showText = true;
+boolean coloredFill = false;
 /* END OF PARAMETERS */
 
 Cell[][] cells;
@@ -12,13 +16,17 @@ int iterationRow;
 DummyCell dummyCell;
 
 void setup() {
-  size(800, 800);
+  size(1200, 960);
   frameRate(framerate);
   // colorMode(HSB, 2*PI, 1.0, 1.0);
+
+  // Drawing settings
   colorMode(RGB, 1.0, 1.0, 1.0);
+  strokeWeight(outlineWeight);
+  textFont(createFont("Consolas", 11));
 
   cellWidth = (width - 2 * padding) / numCols;
-  cellHeight = (height - 2 * padding) / numRows;
+  cellHeight = (height - 2 * padding - bottomPadding) / numRows;
 
   dummyCell = new DummyCell(); // Initialize singleton DummyCell
   iterationRow = 1;
@@ -30,21 +38,14 @@ void setup() {
 
 void draw() {
   print(iterationRow);
-  println();
-  print(cells[1][1]); print(" ");
-  print(cells[1][1].getActivation()); println();
 
   updateCells();
-
-  print(cells[1][1]); print(" ");
-  print(cells[1][1].getActivation()); println();
-
   drawCells();
 
-  print(cells[1][1]); print(" ");
-  print(cells[1][1].getActivation()); println();
-
   iterationRow += 1;
+  if (iterationRow == numRows) {
+    noLoop();
+  }
 
   println();
 }
@@ -79,18 +80,36 @@ Cell[] getNeighbours(int row, int col) {
 }
 
 void drawCells() {
+  color strokeColor, fillColor;
   for (int row = 0; row < numRows; row++) {
     for (int col = 0; col < numCols; col++) {
       float x = padding + col * cellWidth;
       float y = padding + row * cellHeight;
 
-      if (row == 1) print(cells[row][col].activation);
+      strokeColor = cells[row][col].getStrokeColor();
+      if (coloredFill)
+        fillColor = cells[row][col].getFillColor();
+      else
+        fillColor = color(cells[row][col].getActivation());
+      stroke(strokeColor);
+      fill(fillColor);
 
-      stroke(cells[row][col].getStrokeColor());
-      fill(cells[row][col].getFillColor());
+      rect(x, y, cellWidth - outlineWeight, cellHeight - outlineWeight);
 
+      if (showText) {
+        fill(round(1 - brightness(fillColor))); // Pick either black or white, for maximum contrast
 
-      rect(x, y, cellWidth, cellHeight);
+        String a  = " A:" + nfs(cells[row][col].getActivation(), 1, 2);
+        text(a,  x + outlineWeight, y + 10 + outlineWeight);
+        if (row > 0) {
+          String r0 = "R0:" + nfs(cells[row][col].getResponse(0), 1, 2);
+          String r1 = "R1:" + nfs(cells[row][col].getResponse(1), 1, 2);
+          String r2 = "R2:" + nfs(cells[row][col].getResponse(2), 1, 2);
+          text(r0, x + outlineWeight, y + 20 + outlineWeight);
+          text(r1, x + outlineWeight, y + 30 + outlineWeight);
+          text(r2, x + outlineWeight, y + 40 + outlineWeight);
+        }
+      }
     }
   }
 }
@@ -110,4 +129,8 @@ void initializeCells() {
       cells[row][col] = new Neuron();
     }
   }
+}
+
+float sigmoid(float x) {
+  return 1 / (1 + exp(-x));
 }

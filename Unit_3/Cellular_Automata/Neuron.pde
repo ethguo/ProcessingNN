@@ -11,10 +11,15 @@ class Cell {
   float getActivation() {
     return activation;
   }
+
   void forward(Cell[] neighbours) { }
 
+  float getResponse(int i) {
+    return 0;
+  }
+
   color getStrokeColor() {
-    return color(0);
+    return color(0.5);
   }
 
   color getFillColor() {
@@ -37,7 +42,7 @@ class Neuron extends Cell {
   Neuron() {
     float[] response = new float[3];
     for (int i = 0; i < 3; i++) {
-      response[i] = constrain(0.5 + 0.1 * randomGaussian(), 0, 1);
+      response[i] = constrain(randomGaussian(), -1, 1);
     }
     this.response = response;
     activation = 0;
@@ -48,22 +53,33 @@ class Neuron extends Cell {
     activation = 0;
   }
 
+  float getActivation() {
+    return activation;
+  }
+
+  float getResponse(int i) {
+    return response[i];
+  }
+
   void forward(Cell[] neighbours) {
     float sum = 0;
     for (int i = 0; i < 3; i++) {
       sum += neighbours[i].getActivation() * response[i];
     }
-    activation = sum / 3;
-    activation = 1;
-    print(activation);
-    print(" ");
+    activation = sigmoid(sum);
   }
 
   color getStrokeColor() {
-    return color(response[0], response[1], response[2]);
+    float r = (response[0] + 1) / 2;
+    float g = (response[1] + 1) / 2;
+    float b = (response[2] + 1) / 2;
+    return color(r, g, b);
   }
 
   color getFillColor() {
-    return color(response[0] * activation, response[1] * activation, response[2] * activation);
+    float r = (response[0] + 1) / 2 * activation;
+    float g = (response[1] + 1) / 2 * activation;
+    float b = (response[2] + 1) / 2 * activation;
+    return color(r, g, b);
   }
 }
