@@ -12,7 +12,7 @@ float trainingRate = 3;
 
 Cell[][] cells;
 float cellWidth, cellHeight;
-int iterationRow, dataItem;
+int iterationRow, phase, dataItem;
 DummyCell dummyCell;
 
 int f = 1;
@@ -27,38 +27,65 @@ void setup() {
   textFont(createFont("Consolas", 11));
 
   // Initialize variables
+  cells = new Cell[numRows][numCols];
   cellWidth = (width - 2 * padding) / numCols;
   cellHeight = (height - 2 * padding - bottomPadding) / numRows;
   dummyCell = new DummyCell(); // Initialize singleton DummyCell
   iterationRow = 1;
+  phase = 1;
 
-  initializeCells();
-
+  initializeNeurons();
+  nextDataItem();
 }
 
 void draw() {
   background(0);
 
   print(iterationRow);
+  print(" " + phase);
 
   updateCells();
-  drawCells();
 
-  iterationRow += 1;
-  if (iterationRow == numRows) {
-    println();
-    backpropagate();
-    println();
-
-    iterationRow = 1;
-    dataItem += 1;
+  if (phase == 1) {
+    if (iterationRow < numRows - 1) {
+      iterationRow++;
+    }
+    else {
+      phase = 2;
+      updateNodeDeltas();
+    }
   }
+  else { // phase == 2
+    if (iterationRow > 1) {
+      iterationRow--;
+    }
+    else {
+      phase = 1;
+      nextDataItem();
+    }
+  }
+
+  println();
+
+  drawCells();
 }
 
 void updateCells() {
-  for (int col = 0; col < numCols; col++) {
-    Cell[] parents = getAdjacent(iterationRow - 1, col);
-    cells[iterationRow][col].forward(parents);
+  if (phase == 1) {
+    // Phase 1: Forward propagation
+    for (int col = 0; col < numCols; col++) {
+      Cell[] parents = getAdjacent(iterationRow - 1, col);
+      Neuron cell = (Neuron) cells[iterationRow][col];
+      cell.forward(parents);
+    }
+  }
+  else {
+    // Phase 2: Backpropagation
+    for (int col = 0; col < numCols; col++) {
+      Cell[] parents = getAdjacent(iterationRow - 1, col);
+      Neuron cell = (Neuron) cells[iterationRow][col];
+      cell.backpropagate(parents);
+    }
   }
 }
 
@@ -86,17 +113,19 @@ Cell[] getAdjacent(int row, int col) {
 }
 
 void drawCells() {
-  color strokeColor, fillColor;
   for (int row = 0; row < numRows; row++) {
     for (int col = 0; col < numCols; col++) {
+      Cell cell = cells[row][col];
+
       float x = padding + col * cellWidth;
       float y = padding + row * cellHeight;
 
-      strokeColor = cells[row][col].getStrokeColor();
+      color strokeColor = cell.getStrokeColor();
+      color fillColor;
       if (coloredFill)
-        fillColor = cells[row][col].getFillColor();
+        fillColor = cell.getFillColor();
       else
-        fillColor = color(cells[row][col].getActivation());
+        fillColor = color(cell.getActivation());
       stroke(strokeColor);
       fill(fillColor);
 
@@ -105,12 +134,12 @@ void drawCells() {
       if (showText) {
         fill(round(1 - brightness(fillColor))); // Pick either black or white, for maximum contrast
 
-        String a  = " A:" + nfs(cells[row][col].getActivation(), 1, 2);
+        String a  = " A:" + nfs(cell.getActivation(), 1, 2);
         text(a,  x + outlineWeight, y + 10 + outlineWeight);
         if (row > 0) {
-          String r0 = "R0:" + nfs(cells[row][col].getResponse(0), 1, 2);
-          String r1 = "R1:" + nfs(cells[row][col].getResponse(1), 1, 2);
-          String r2 = "R2:" + nfs(cells[row][col].getResponse(2), 1, 2);
+          String r0 = "R0:" + nfs(cell.getResponse(0), 1, 2);
+          String r1 = "R1:" + nfs(cell.getResponse(1), 1, 2);
+          String r2 = "R2:" + nfs(cell.getResponse(2), 1, 2);
           text(r0, x + outlineWeight, y + 20 + outlineWeight);
           text(r1, x + outlineWeight, y + 30 + outlineWeight);
           text(r2, x + outlineWeight, y + 40 + outlineWeight);
@@ -120,20 +149,43 @@ void drawCells() {
   }
 }
 
-void initializeCells() {
-  cells = new Cell[numRows][numCols];
-
-  // Initialize stimuli (in row 0)
-  for (int col = 0; col < numCols; col++) {
-    float state = round(random(0, 1));
-    cells[0][col] = new Cell(state);
-  }
-
+void initializeNeurons() {
   // Initialize neurons
-  for (int row = 1; row < numRows; row++) {
+  int row;
+  for (row = 1; row < numRows-1; row++) {
     for (int col = 0; col < numCols; col++) {
       cells[row][col] = new Neuron();
     }
+  }
+
+  for (int col = 0; col < numCols; col++) {
+    cells[row][col] = new OutputNeuron();
+  }
+}
+
+void updateNodeDeltas() {
+  print("updateNodeDeltas");
+  int row = numRows - 1;
+  for (int col = 0; col < numCols; col++) {
+    OutputNeuron cell = (OutputNeuron) cells[row][col];
+    cell.updateNodeDelta();
+  }
+  for (row = numRows-2; row > 1; row--) {
+    for (int col = 0; col < numCols; col++) {
+      Cell[] children = getAdjacent(row + 1, col);
+      Neuron cell = (Neuron) cells[row][col];
+      cell.updateNodeDelta(children);
+    }
+  }
+}
+
+void nextDataItem() {
+  // Initialize stimuli (in row 0)
+  for (int col = 0; col < numCols; col++) {
+    float x = round(random(0, 1));
+    cells[0][col] = new Cell(x);
+
+    ((OutputNeuron) cells[numRows-1][col]).setTarget(1 - x); // Temporarily using input as target output >:)
   }
 }
 
