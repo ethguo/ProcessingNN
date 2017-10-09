@@ -4,7 +4,7 @@ int numRows = 5;
 float padding = 0;
 float bottomPadding = 100;
 int outlineWeight = 4;
-float framerate = 2;
+float framerate = 60;
 boolean showText = true;
 boolean coloredFill = true;
 float trainingRate = 3;
@@ -42,9 +42,6 @@ void draw() {
 }
 
 void updateCells() {
-  print(iterationRow);
-  print(" " + phase);
-
   if (iterationRow == 0)
     updateStimuli();
   else if (iterationRow < numRows)
@@ -64,8 +61,6 @@ void updateCells() {
       phase = 1;
     }
   }
-
-  println();
 }
 
 void initializeNeurons() {
@@ -104,7 +99,6 @@ void updateNeurons(int row) {
 }
 
 void updateNodeDeltas() {
-  print("updateNodeDeltas");
   int row = numRows - 1;
   for (int col = 0; col < numCols; col++) {
     OutputNeuron cell = (OutputNeuron) cells[row][col];
