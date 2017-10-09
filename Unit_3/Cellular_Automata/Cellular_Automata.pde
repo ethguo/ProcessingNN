@@ -6,13 +6,13 @@ float bottomPadding = 100;
 int outlineWeight = 4;
 float framerate = 2;
 boolean showText = true;
-boolean coloredFill = false;
+boolean coloredFill = true;
 float trainingRate = 3;
 /* END OF PARAMETERS */
 
 Cell[][] cells;
 float cellWidth, cellHeight;
-int iterationRow;
+int iterationRow, dataItem;
 DummyCell dummyCell;
 
 int f = 1;
@@ -49,6 +49,9 @@ void draw() {
     println();
     backpropagate();
     println();
+
+    iterationRow = 1;
+    dataItem += 1;
   }
 }
 
@@ -139,53 +142,39 @@ float sigmoid(float x) {
 }
 
 float sigmoidPrime(float x) {
-  float expNegX = exp(-x);
-  return expNegX / pow(1 + expNegX, 2);
+  // According to https://en.wikipedia.org/wiki/Logistic_function#Derivative
+  return x * (1 - x);
 }
 
 void backpropagate() {
   float totalCost = 0;
   // float[] errors = new float[numCols];
+  Cell cell;
   float target, out, error, nodeDelta, dEdW, prevOut;
-  Cell[] parents;
-  Cell[] children;
+  Cell[] parents, children;
 
-  // Special case for the bottom row
-  int row = numRows - 1;
-  for (int col = 0; col < numCols; col++) {
-    // Temporarily using input as target output >:)
-    target = cells[0][col].getActivation();
-    out = cells[row][col].getActivation();
-    error = target - out;
-
-    nodeDelta = -error * out * (1 - out);
-    cells[row][col].nodeDelta = nodeDelta;
-
-    parents = getAdjacent(row - 1, col);
-    for (int i = 0; i < 3; i++) {
-      prevOut = parents[i].getActivation();
-
-      dEdW = nodeDelta * prevOut;
-
-      cells[row][col].updateWeight(i, dEdW * trainingRate);
-    }
-
-    totalCost += pow(error, 2);
-  }
-
-  for (row = numRows - 2; row > 1; row--) {
+  for (int row = numRows - 1; row > 1; row--) {
     for (int col = 0; col < numCols; col++) {
-      out = cells[row][col].getActivation();
-      nodeDelta = 0;
+      cell = cells[row][col];
+      out = cell.getActivation();
 
-      children = getAdjacent(row + 1, col);
-      for (int i = 0; i < 3; i++) {
-        nodeDelta += children[i].nodeDelta * cells[row][col].getResponse(i);
+      if (row == numRows - 1) {
+        // Special case for the bottom row
+        target = cells[0][col].getActivation(); // Temporarily using input as target output >:)
+        error = target - out;
+        nodeDelta = -error;
+        totalCost += pow(error, 2);
+      }
+      else {
+        nodeDelta = 0;
+        children = getAdjacent(row + 1, col);
+        for (int i = 0; i < 3; i++) {
+          nodeDelta += children[i].nodeDelta * cell.getResponse(i);
+        }
       }
 
-      nodeDelta *= out * (1 - out);
-
-      cells[row][col].nodeDelta = nodeDelta;
+      nodeDelta *= sigmoidPrime(out); // Chain on derivative of activation function (sigmoid).
+      cell.nodeDelta = nodeDelta;
 
       parents = getAdjacent(row - 1, col);
       for (int i = 0; i < 3; i++) {
@@ -193,14 +182,11 @@ void backpropagate() {
 
         dEdW = nodeDelta * prevOut;
 
-        cells[row][col].updateWeight(i, dEdW * trainingRate);
+        cell.updateWeight(i, dEdW * trainingRate);
       }
     }
   }
 
-
-  totalCost /= 2;
+  // Omitting the 1/2 * totalCost;
   print(totalCost);
-
-  iterationRow = 1;
 }
