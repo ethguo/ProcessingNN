@@ -12,10 +12,8 @@ float trainingRate = 3;
 
 Cell[][] cells;
 float cellWidth, cellHeight;
-int iterationRow, phase, dataItem;
+int iterationRow, phase;
 DummyCell dummyCell;
-
-int f = 1;
 
 void setup() {
   size(1200, 600);
@@ -70,6 +68,30 @@ void updateCells() {
   println();
 }
 
+void initializeNeurons() {
+  // Initialize neurons
+  int row;
+  for (row = 1; row < numRows-1; row++) {
+    for (int col = 0; col < numCols; col++) {
+      cells[row][col] = new Neuron();
+    }
+  }
+
+  for (int col = 0; col < numCols; col++) {
+    cells[row][col] = new OutputNeuron();
+  }
+}
+
+void updateStimuli() {
+  // Initialize stimuli (in row 0)
+  for (int col = 0; col < numCols; col++) {
+    float x = round(random(0, 1));
+    cells[0][col] = new Cell(x);
+
+    ((OutputNeuron) cells[numRows-1][col]).setTarget(1 - x); // Temporarily using input as target output >:)
+  }
+}
+
 void updateNeurons(int row) {
   for (int col = 0; col < numCols; col++) {
     Neuron cell = (Neuron) cells[row][col];
@@ -78,6 +100,22 @@ void updateNeurons(int row) {
       cell.forward(parents);
     else // Phase 2: Backpropagation
       cell.backpropagate(parents);
+  }
+}
+
+void updateNodeDeltas() {
+  print("updateNodeDeltas");
+  int row = numRows - 1;
+  for (int col = 0; col < numCols; col++) {
+    OutputNeuron cell = (OutputNeuron) cells[row][col];
+    cell.updateNodeDelta();
+  }
+  for (row = numRows-2; row > 1; row--) {
+    for (int col = 0; col < numCols; col++) {
+      Cell[] children = getAdjacent(row + 1, col);
+      Neuron cell = (Neuron) cells[row][col];
+      cell.updateNodeDelta(children);
+    }
   }
 }
 
@@ -140,53 +178,4 @@ void drawCells() {
       }
     }
   }
-}
-
-void initializeNeurons() {
-  // Initialize neurons
-  int row;
-  for (row = 1; row < numRows-1; row++) {
-    for (int col = 0; col < numCols; col++) {
-      cells[row][col] = new Neuron();
-    }
-  }
-
-  for (int col = 0; col < numCols; col++) {
-    cells[row][col] = new OutputNeuron();
-  }
-}
-
-void updateNodeDeltas() {
-  print("updateNodeDeltas");
-  int row = numRows - 1;
-  for (int col = 0; col < numCols; col++) {
-    OutputNeuron cell = (OutputNeuron) cells[row][col];
-    cell.updateNodeDelta();
-  }
-  for (row = numRows-2; row > 1; row--) {
-    for (int col = 0; col < numCols; col++) {
-      Cell[] children = getAdjacent(row + 1, col);
-      Neuron cell = (Neuron) cells[row][col];
-      cell.updateNodeDelta(children);
-    }
-  }
-}
-
-void updateStimuli() {
-  // Initialize stimuli (in row 0)
-  for (int col = 0; col < numCols; col++) {
-    float x = round(random(0, 1));
-    cells[0][col] = new Cell(x);
-
-    ((OutputNeuron) cells[numRows-1][col]).setTarget(1 - x); // Temporarily using input as target output >:)
-  }
-}
-
-float sigmoid(float x) {
-  return 1 / (1 + exp(-x));
-}
-
-float sigmoidPrime(float x) {
-  // According to https://en.wikipedia.org/wiki/Logistic_function#Derivative
-  return x * (1 - x);
 }
