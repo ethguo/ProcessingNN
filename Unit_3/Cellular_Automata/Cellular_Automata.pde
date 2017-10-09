@@ -31,61 +31,53 @@ void setup() {
   cellWidth = (width - 2 * padding) / numCols;
   cellHeight = (height - 2 * padding - bottomPadding) / numRows;
   dummyCell = new DummyCell(); // Initialize singleton DummyCell
-  iterationRow = 1;
+  iterationRow = 0;
   phase = 1;
 
   initializeNeurons();
-  nextDataItem();
+  updateStimuli();
 }
 
 void draw() {
-  background(0);
-
-  print(iterationRow);
-  print(" " + phase);
-
   updateCells();
-
-  if (phase == 1) {
-    if (iterationRow < numRows - 1) {
-      iterationRow++;
-    }
-    else {
-      phase = 2;
-      updateNodeDeltas();
-    }
-  }
-  else { // phase == 2
-    if (iterationRow > 1) {
-      iterationRow--;
-    }
-    else {
-      phase = 1;
-      nextDataItem();
-    }
-  }
-
-  println();
-
   drawCells();
 }
 
 void updateCells() {
+  print(iterationRow);
+  print(" " + phase);
+
+  if (iterationRow == 0)
+    updateStimuli();
+  else if (iterationRow < numRows)
+    updateNeurons(iterationRow);
+  else // iterationRow == numRow
+    updateNodeDeltas();
+
   if (phase == 1) {
-    // Phase 1: Forward propagation
-    for (int col = 0; col < numCols; col++) {
-      Cell[] parents = getAdjacent(iterationRow - 1, col);
-      Neuron cell = (Neuron) cells[iterationRow][col];
-      cell.forward(parents);
+    iterationRow++;
+    if (iterationRow == numRows) {
+      phase = 2;
     }
   }
-  else {
-    // Phase 2: Backpropagation
-    for (int col = 0; col < numCols; col++) {
-      Cell[] parents = getAdjacent(iterationRow - 1, col);
-      Neuron cell = (Neuron) cells[iterationRow][col];
-      cell.backpropagate(parents);
+  else { // phase == 2
+    iterationRow--;
+    if (iterationRow == 0) {
+      phase = 1;
     }
+  }
+
+  println();
+}
+
+void updateNeurons(int row) {
+  for (int col = 0; col < numCols; col++) {
+    Neuron cell = (Neuron) cells[row][col];
+    Cell[] parents = getAdjacent(row - 1, col);
+    if (phase == 1) // Phase 1: Forward propagation
+      cell.forward(parents);
+    else // Phase 2: Backpropagation
+      cell.backpropagate(parents);
   }
 }
 
@@ -113,6 +105,7 @@ Cell[] getAdjacent(int row, int col) {
 }
 
 void drawCells() {
+  background(0);
   for (int row = 0; row < numRows; row++) {
     for (int col = 0; col < numCols; col++) {
       Cell cell = cells[row][col];
@@ -179,7 +172,7 @@ void updateNodeDeltas() {
   }
 }
 
-void nextDataItem() {
+void updateStimuli() {
   // Initialize stimuli (in row 0)
   for (int col = 0; col < numCols; col++) {
     float x = round(random(0, 1));
