@@ -1,11 +1,7 @@
 class Cell {
-  /**
-   * Represents a Stimulus cell, and also is the base class for all other kinds of cells.
-   */
+  /* Represents a Stimulus cell, and also is the base class for all other kinds of cells. */
   float activation;
   float nodeDelta;
-
-  Cell() { }
 
   float getActivation() {
     return activation;
@@ -30,10 +26,10 @@ class Neuron extends Cell {
   float[] weights;
   float bias;
 
-  Neuron() {
+  Neuron(int numWeights) {
     // Initialize the weights array randomly
-    float[] weights = new float[3];
-    for (int i = 0; i < 3; i++) {
+    float[] weights = new float[numWeights];
+    for (int i = 0; i < numWeights; i++) {
       weights[i] = constrain(randomGaussian() * initialStdDev, -1, 1);
     }
     this.weights = weights;
@@ -72,14 +68,14 @@ class Neuron extends Cell {
 
   void forward(Cell[] parents) {
     float sum = 0;
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < parents.length; i++) {
       sum += parents[i].getActivation() * weights[i];
     }
     activation = sigmoid(sum + bias);
   }
 
   void backpropagate(Cell[] parents) {
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < parents.length; i++) {
       float prevOut = parents[i].getActivation();
       weights[i] -= nodeDelta * prevOut * learningRate;
     }
@@ -88,7 +84,7 @@ class Neuron extends Cell {
 
   void updateNodeDelta(Cell[] children) {
     nodeDelta = 0;
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < children.length; i++) {
       nodeDelta += children[i].nodeDelta * weights[i];
     }
     // Negative?
@@ -99,6 +95,10 @@ class Neuron extends Cell {
 
 class OutputNeuron extends Neuron {
   float target;
+
+  OutputNeuron(int numWeights) {
+    super(numWeights);
+  }
 
   void setTarget(float target) {
     this.target = target;

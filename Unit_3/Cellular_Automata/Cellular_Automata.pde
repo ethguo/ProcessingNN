@@ -2,6 +2,7 @@
 String dataFile = "dataset1.json";
 int numCols = 10; // Set to the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
 int numRows = 3;
+boolean fullConnections = true;
 
 float slowFrameRate = 3;
 float fastFrameRate = 120;
@@ -114,16 +115,22 @@ void initializeCells() {
     cells[row][col] = new Cell();
   }
 
+  int numWeights;
+  if (fullConnections)
+    numWeights = numCols;
+  else
+    numWeights = 3;
+
   // Initialize Neurons
   for (row = 1; row < numRows-1; row++) {
     for (int col = 0; col < numCols; col++) {
-      cells[row][col] = new Neuron();
+      cells[row][col] = new Neuron(numWeights);
     }
   }
 
   // Initialize bottom row of OutputNeurons
   for (int col = 0; col < numCols; col++) {
-    cells[row][col] = new OutputNeuron();
+    cells[row][col] = new OutputNeuron(numWeights);
   }
 }
 
@@ -156,7 +163,7 @@ void updateStimuli() {
 void updateNeurons(int row) {
   for (int col = 0; col < numCols; col++) {
     Neuron cell = (Neuron) cells[row][col];
-    Cell[] parents = getAdjacent(row - 1, col);
+    Cell[] parents = getConnections(row - 1, col);
     if (phase == 1) // Phase 1: Forward propagation
       cell.forward(parents);
     else // Phase 2: Backpropagation
@@ -172,38 +179,39 @@ void updateNodeDeltas() {
   }
   for (row = numRows-2; row > 1; row--) {
     for (int col = 0; col < numCols; col++) {
-      Cell[] children = getAdjacent(row + 1, col);
+      Cell[] children = getConnections(row + 1, col);
       Neuron cell = (Neuron) cells[row][col];
       cell.updateNodeDelta(children);
     }
   }
 }
 
-Cell[] getAdjacent(int row, int col) {
-  /**
-   * Call on (row - 1, col) to get "parents". Call on (row+1, col) to get "children".
-   * "Wraps around".
-   */
-
-  Cell[] adjacent = new Cell[3];
-
-  try {
-    adjacent[0] = cells[row][col-1];
+Cell[] getConnections(int row, int col) {
+  /* Call on (row - 1, col) to get "parents". Call on (row + 1, col) to get "children". */
+  Cell[] connections;
+  if (fullConnections) {
+    connections = cells[row];
   }
-  catch (ArrayIndexOutOfBoundsException e) {
-    adjacent[0] = cells[row][numCols-1];
-  }
+  else {
+    connections = new Cell[3];
 
-  adjacent[1] = cells[row][col];
+    try {
+      connections[0] = cells[row][col-1];
+    }
+    catch (ArrayIndexOutOfBoundsException e) {
+      connections[0] = cells[row][numCols-1];
+    }
 
-  try {
-    adjacent[2] = cells[row][col+1];
-  }
-  catch (ArrayIndexOutOfBoundsException e) {
-    adjacent[2] = cells[row][0];
-  }
+    connections[1] = cells[row][col];
 
-  return adjacent;
+    try {
+      connections[2] = cells[row][col+1];
+    }
+    catch (ArrayIndexOutOfBoundsException e) {
+      connections[2] = cells[row][0];
+    }
+  }
+  return connections;
 }
 
 void drawCells() {
