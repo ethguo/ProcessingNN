@@ -21,8 +21,8 @@ boolean coloredFill = false; // If true, uses the color of the outline to tint t
                              // Pressing 'f' will toggle this while running.
 boolean showExpectedOutput = true; // If true, indicates the expected output(s) as a small bar under the bottom row of cells.
                                    // Pressing 'o' will toggle this while running.
-float[] speeds = {3, 60, 10000}; // The set of speeds that can be cycled through (in frames per second).
-                                 // Pressing '-' and '+' will cycle through this while running.
+float[] speeds = {3, 10, 60, 10000}; // The set of speeds that can be cycled through (in frames per second).
+                                 // Pressing '-' and '+' will cycle through these speeds while running.
 
 /* END OF PARAMETERS */
 
@@ -50,7 +50,7 @@ void settings() {
   int windowHeight = numRows * cellHeight + cellHeight / 2;
   size(windowWidth, windowHeight);
 
-  noSmooth(); // Turn off antialiasing, to make borders look nicer (because everything is vertical/horizontal anyways).
+  noSmooth(); // Turn off antialiasing, to make borders look nicer (because everything is horizontal/vertical anyways).
 }
 
 
@@ -151,7 +151,7 @@ void updateStimuli() {
 
     // Set the target value of the corresponding OutputNeuron.
     OutputNeuron outputNeuron = (OutputNeuron) cells[numRows-1][col];
-    outputNeuron.setTarget(output);
+    outputNeuron.target = output;
   }
 
   if (speeds[speed] < 10) { // Only do this on low framerates, to prevent flickering at higher speeds.
@@ -243,21 +243,21 @@ void drawCells() {
       int x = col * cellWidth + outlineWeight / 2;
       int y = row * cellHeight + outlineWeight / 2;
 
-      // Get the stroke and fill color for this cell.
-      color strokeColor = cell.getStrokeColor();
+      // Get the outline and fill color for this cell.
+      color outlineColor = cell.getOutlineColor();
       color fillColor;
       if (coloredFill)
         fillColor = cell.getFillColor();
       else // If coloredFill is off, used cell's activation value as grayscale value.
         fillColor = color(cell.getActivation());
 
-      stroke(strokeColor);
+      stroke(outlineColor);
       fill(fillColor);
 
       rect(x, y, cellWidth - outlineWeight, cellHeight - outlineWeight);
 
       if (showText) {
-        fill(round(1 - brightness(fillColor))); // Pick either black or white, for maximum contrast
+        fill(round(1 - brightness(fillColor))); // Pick either black or white text, for maximum contrast.
 
         int xText = x + outlineWeight;
         int yText = y + outlineWeight + 10;
@@ -270,10 +270,10 @@ void drawCells() {
           // If the cell is a Neuron, also display the weights and bias values.
           Neuron neuron = (Neuron) cell;
 
-          String r0 = "R0:" + nfs(neuron.getWeights(0), 1, 2);
-          String r1 = "R1:" + nfs(neuron.getWeights(1), 1, 2);
-          String r2 = "R2:" + nfs(neuron.getWeights(2), 1, 2);
-          String b  = " B:" + nfs(neuron.getBias(),     1, 2);
+          String r0 = "R0:" + nfs(neuron.weights[0], 1, 2);
+          String r1 = "R1:" + nfs(neuron.weights[1], 1, 2);
+          String r2 = "R2:" + nfs(neuron.weights[2], 1, 2);
+          String b  = " B:" + nfs(neuron.bias,     1, 2);
 
           text(r0, xText, yText + 10);
           text(r1, xText, yText + 20);
@@ -292,8 +292,7 @@ void drawCells() {
       int x = col * cellWidth;
       
       OutputNeuron outputNeuron = (OutputNeuron) cells[numRows-1][col];
-      float target = outputNeuron.getTarget();
-      fill(color(target)); // Use the OutputNeuron's activation value as grayscale value.
+      fill(color(outputNeuron.target)); // Use the target value as grayscale value.
 
       rect(x, y, cellWidth, cellHeight / 2);
     }
