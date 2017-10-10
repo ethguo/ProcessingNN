@@ -15,10 +15,6 @@ class Cell {
     this.activation = activation;
   }
 
-  float getResponse(int i) {
-    return 0;
-  }
-
   color getStrokeColor() {
     return color(0.5);
   }
@@ -29,25 +25,18 @@ class Cell {
 }
 
 
-class DummyCell extends Cell {
-  /**
-   * Dummy cell (singleton), returned when trying to access a cell that is out of bounds.
-   */
-  float activation = 0;
-}
-
-
 class Neuron extends Cell {
   float activation;
-  float[] response;
+  float[] weights;
+  float bias;
 
   Neuron() {
-    // Initialize the response array randomly
-    float[] response = new float[3];
+    // Initialize the weights array randomly
+    float[] weights = new float[3];
     for (int i = 0; i < 3; i++) {
-      response[i] = constrain(randomGaussian(), -1, 1);
+      weights[i] = constrain(randomGaussian() * initialStdDev, -1, 1);
     }
-    this.response = response;
+    this.weights = weights;
     activation = 0;
   }
 
@@ -55,43 +44,52 @@ class Neuron extends Cell {
     return activation;
   }
 
-  float getResponse(int i) {
-    return response[i];
+  void setActivation(float activation) {
+    this.activation = activation;
+  }
+
+  float getWeights(int i) {
+    return weights[i];
+  }
+
+  float getBias() {
+    return bias;
   }
 
   color getStrokeColor() {
-    float r = (response[0] + 1) / 2;
-    float g = (response[1] + 1) / 2;
-    float b = (response[2] + 1) / 2;
+    float r = (weights[0] + 1) / 2;
+    float g = (weights[1] + 1) / 2;
+    float b = (weights[2] + 1) / 2;
     return color(r, g, b);
   }
 
   color getFillColor() {
-    float r = (response[0] + 1) / 2 * activation;
-    float g = (response[1] + 1) / 2 * activation;
-    float b = (response[2] + 1) / 2 * activation;
+    float r = (weights[0] + 1) / 2 * activation;
+    float g = (weights[1] + 1) / 2 * activation;
+    float b = (weights[2] + 1) / 2 * activation;
     return color(r, g, b);
   }
 
   void forward(Cell[] parents) {
     float sum = 0;
     for (int i = 0; i < 3; i++) {
-      sum += parents[i].getActivation() * response[i];
+      sum += parents[i].getActivation() * weights[i];
     }
-    activation = sigmoid(sum);
+    activation = sigmoid(sum + bias);
   }
 
   void backpropagate(Cell[] parents) {
     for (int i = 0; i < 3; i++) {
       float prevOut = parents[i].getActivation();
-      response[i] -= nodeDelta * prevOut * trainingRate;
+      weights[i] -= nodeDelta * prevOut * learningRate;
     }
+    bias -= nodeDelta * biasLearningRate;
   }
 
   void updateNodeDelta(Cell[] children) {
     nodeDelta = 0;
     for (int i = 0; i < 3; i++) {
-      nodeDelta += children[i].nodeDelta * response[i];
+      nodeDelta += children[i].nodeDelta * weights[i];
     }
     // Negative?
     nodeDelta *= sigmoidPrime(activation); // Chain on derivative of activation function (sigmoid).

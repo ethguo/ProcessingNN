@@ -1,36 +1,46 @@
 /* PARAMETERS */
-String dataFile = "dataset1.json";
-int numCols = 20; // Set to the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
-int numRows = 4;
+String dataFile = "dataset4.json";
+int numCols = 10; // Set to the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
+int numRows = 2;
 
-float framerate = 60;
+float slowFrameRate = 3;
+float fastFrameRate = 120;
 
 int outlineWeight = 4;
-int cellWidth = 60;
-int cellHeight = 60;
-boolean showText = true;
-boolean coloredFill = false;
+int cellWidth = 64;
+int cellHeight = 64;
+boolean showText = false;
+boolean coloredFill = true;
 
-float trainingRate = 10;
+float learningRate = 3;
+float biasLearningRate = 1;
+float initialStdDev = 0.1;
 /* END OF PARAMETERS */
+
 
 JSONObject dataObject;
 JSONArray data;
 int dataSize;
+
 Cell[][] cells;
-int iterationRow, phase;
-DummyCell dummyCell;
+int iterationRow = 0;
+int phase = 1;
+boolean paused = false;
+boolean fast = false;
 
 void settings() {
+  // Set window size based on numCols, numRows
   int windowWidth = numCols * cellWidth;
   int windowHeight = numRows * cellHeight;
   size(windowWidth, windowHeight);
-  noSmooth(); // Turn off antialiasing, to make borders look nicer (because everything is vertical/horizontal).
+
+  // Turn off antialiasing, to make borders look nicer (because everything is vertical/horizontal anyways)
+  noSmooth();
 }
 
 void setup() {
   // Drawing settings
-  frameRate(framerate);
+  frameRate(slowFrameRate);
   colorMode(RGB, 1.0, 1.0, 1.0);
   strokeWeight(outlineWeight);
   textFont(createFont("Consolas", 11));
@@ -41,9 +51,6 @@ void setup() {
 
   // Initialize variables
   cells = new Cell[numRows][numCols];
-  dummyCell = new DummyCell(); // Initialize singleton DummyCell
-  iterationRow = 0;
-  phase = 1;
 
   initializeCells();
   updateStimuli();
@@ -56,10 +63,24 @@ void draw() {
 
 void keyPressed() {
   if (key == 'f' || key == 'F') {
-    frameRate(120);
+    if (fast)
+      frameRate(slowFrameRate);
+    else
+      frameRate(fastFrameRate);
+    fast = !fast;
   }
-  else if (key == 's' || key == 'S') {
-    frameRate(2);
+  else if (key == 'p' || key == 'P') {
+    if (paused)
+      noLoop();
+    else
+      loop();
+    paused = !paused;
+  }
+  else if (key == 't' || key == 'T') {
+    showText = !showText;
+  }
+  else if (key == 'c' || key == 'C') {
+    coloredFill = !coloredFill;
   }
 }
 
@@ -120,6 +141,15 @@ void updateStimuli() {
 
     OutputNeuron outputNeuron = (OutputNeuron) cells[numRows-1][col];
     outputNeuron.setTarget(output); // Temporarily using input as target output >:)
+  }
+
+  if (!fast) { // Disable this if we're in fast mode, to reduce flickering
+    // Set all activations back to zero
+    for (int row = 1; row < numRows; row++) {
+      for (int col = 0; col < numCols; col++) {
+        cells[row][col].setActivation(0);
+      }
+    }
   }
 }
 
@@ -199,15 +229,18 @@ void drawCells() {
       if (showText) {
         fill(round(1 - brightness(fillColor))); // Pick either black or white, for maximum contrast
 
-        String a  = " A:" + nfs(cell.getActivation(), 1, 2);
-        text(a,  x + outlineWeight, y + 10 + outlineWeight);
+        String a = " A:" + nfs(cell.getActivation(), 1, 2);
+        text(a, x + outlineWeight, y + 10 + outlineWeight);
         if (row > 0) {
-          String r0 = "R0:" + nfs(cell.getResponse(0), 1, 2);
-          String r1 = "R1:" + nfs(cell.getResponse(1), 1, 2);
-          String r2 = "R2:" + nfs(cell.getResponse(2), 1, 2);
+          Neuron neuron = (Neuron) cell;
+          String r0 = "R0:" + nfs(neuron.getWeights(0), 1, 2);
+          String r1 = "R1:" + nfs(neuron.getWeights(1), 1, 2);
+          String r2 = "R2:" + nfs(neuron.getWeights(2), 1, 2);
+          String b  = " B:" + nfs(neuron.getBias(),     1, 2);
           text(r0, x + outlineWeight, y + 20 + outlineWeight);
           text(r1, x + outlineWeight, y + 30 + outlineWeight);
           text(r2, x + outlineWeight, y + 40 + outlineWeight);
+          text(b,  x + outlineWeight, y + 50 + outlineWeight);
         }
       }
     }
