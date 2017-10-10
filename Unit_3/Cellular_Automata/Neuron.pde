@@ -87,8 +87,9 @@ class Neuron extends Cell {
     for (int i = 0; i < children.length; i++) {
       nodeDelta += children[i].nodeDelta * weights[i];
     }
-    // Negative?
-    nodeDelta *= sigmoidPrime(activation); // Chain on derivative of activation function (sigmoid).
+
+    nodeDelta *= activation * (1 - activation); // Chain on derivative of activation function (sigmoid).
+    // Derivative: https://en.wikipedia.org/wiki/Logistic_function#Derivative
   }
 }
 
@@ -109,20 +110,13 @@ class OutputNeuron extends Neuron {
   }
 
   void updateNodeDelta() {
-    // Special case for the bottom row
     float error = target - activation;
-    // totalCost += pow(error, 2);
 
-    nodeDelta = -error * sigmoidPrime(activation); // Chain on derivative of activation function (sigmoid).
+    nodeDelta = -error * activation * (1 - activation); // Chain on derivative of activation function (sigmoid).
   }
 }
 
 
 float sigmoid(float x) {
   return 1 / (1 + exp(-x));
-}
-
-float sigmoidPrime(float x) {
-  // According to https://en.wikipedia.org/wiki/Logistic_function#Derivative
-  return x * (1 - x);
 }

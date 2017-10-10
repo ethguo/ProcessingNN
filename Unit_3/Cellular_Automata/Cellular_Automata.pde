@@ -1,11 +1,10 @@
 /* PARAMETERS */
 String dataFile = "iris.json";
 int numCols = 4; // Set to the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
-int numRows = 4;
+int numRows = 4; // How many layers?
 boolean fullConnections = true;
 
-float slowFrameRate = 3;
-float fastFrameRate = 120;
+float[] speeds = {3, 60, 10000}; // in frames per second
 
 int outlineWeight = 4;
 int cellWidth = 64;
@@ -28,7 +27,7 @@ Cell[][] cells;
 int iterationRow = 0;
 int phase = 1;
 boolean paused = false;
-boolean fast = false;
+int speed = 0;
 
 void settings() {
   // Set window size based on numCols, numRows
@@ -42,7 +41,7 @@ void settings() {
 
 void setup() {
   // Drawing settings
-  frameRate(slowFrameRate);
+  frameRate(speeds[0]);
   colorMode(RGB, 1.0, 1.0, 1.0);
   strokeWeight(outlineWeight);
   textFont(createFont("Consolas", 11));
@@ -64,12 +63,17 @@ void draw() {
 }
 
 void keyPressed() {
-  if (key == 'f' || key == 'F') {
-    if (fast)
-      frameRate(slowFrameRate);
-    else
-      frameRate(fastFrameRate);
-    fast = !fast;
+  if (key == '=' || key == '+') {
+    if (speed < speeds.length - 1) {
+      speed++;
+      frameRate(speeds[speed]);
+    }
+  }
+  if (key == '-' || key == '_') {
+    if (speed > 0) {
+      speed--;
+      frameRate(speeds[speed]);
+    }
   }
   else if (key == 'p' || key == 'P') {
     if (paused)
@@ -154,7 +158,7 @@ void updateStimuli() {
     outputNeuron.setTarget(output);
   }
 
-  if (!fast) { // Disable this if we're in fast mode, to reduce flickering
+  if (speed == 0) { // Only enable this on the lowest speed, to reduce flickering
     // Set all activations back to zero
     for (int row = 1; row < numRows; row++) {
       for (int col = 0; col < numCols; col++) {
