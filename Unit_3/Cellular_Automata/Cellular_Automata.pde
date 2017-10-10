@@ -1,18 +1,18 @@
 /* PARAMETERS */
 /* Data */ 
-String dataFile = "dataset1.json";
-int numCols = 10; // Set to the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
+String dataFile = "mnist.json";
+int numCols = 784; // Set to the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
 
 /* Neural Network Tuning */
-int numRows = 3; // How many layers? (Counting stimuli layer and output layer)
-boolean fullConnections = false; // false: A cell's connections are the three adjacent cells above/below it.
+int numRows = 4; // How many layers? (Counting stimuli layer and output layer)
+boolean fullConnections = true; // false: A cell's connections are the three adjacent cells above/below it.
                                  // true:  A cell is connected to every cell in the layer above/below it (More like a real neural network).
-float learningRate = 3; // How much the neural network updates the weights each time. However, setting this too high can make it unstable
-float biasLearningRate = 1; // How much the neural network updates the biases each time
-float initialStdDev = 0.1; // How strong the initial weights are.
+float learningRate = 0.001; // How much the neural network updates the weights each time. However, setting this too high can make it unstable
+float biasLearningRate = 0.0001; // How much the neural network updates the biases each time
+float initialStdDev = 0.01; // How strong the initial weights are.
 
 /* Graphics */
-int outlineWeight = 4; // The thickness of the outline.
+int outlineWeight = 0; // The thickness of the outline.
 int cellWidth = 64;
 int cellHeight = 64;
 boolean showText = false; // If true, displays text on each cell displaying the exact numeric values of each cell's activation, weights and bias.
@@ -46,7 +46,7 @@ int speed = 0;
 
 void settings() {
   // Set window size based on numCols, numRows.
-  int windowWidth = numCols * cellWidth;
+  int windowWidth = min(numCols * cellWidth, 1920);
   int windowHeight = numRows * cellHeight + cellHeight / 2;
   size(windowWidth, windowHeight);
 
