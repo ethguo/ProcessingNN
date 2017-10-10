@@ -1,5 +1,5 @@
 class Cell {
-  /* Represents a Stimulus cell, and also is the base class for all other kinds of cells. */
+  // Represents a Stimulus cell, and also is the base class for all other kinds of cells.
   float activation;
   float nodeDelta;
 
@@ -66,7 +66,7 @@ class Neuron extends Cell {
     return color(r, g, b);
   }
 
-  void forward(Cell[] parents) {
+  void updateActivation(Cell[] parents) {
     float sum = 0;
     for (int i = 0; i < parents.length; i++) {
       sum += parents[i].getActivation() * weights[i];
@@ -74,7 +74,7 @@ class Neuron extends Cell {
     activation = sigmoid(sum + bias);
   }
 
-  void backpropagate(Cell[] parents) {
+  void updateWeights(Cell[] parents) {
     for (int i = 0; i < parents.length; i++) {
       float prevOut = parents[i].getActivation();
       weights[i] -= nodeDelta * prevOut * learningRate;

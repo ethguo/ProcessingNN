@@ -1,24 +1,38 @@
 /* PARAMETERS */
-String dataFile = "iris.json";
-int numCols = 4; // Set to the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
-int numRows = 4; // How many layers?
-boolean fullConnections = true;
+/* Data */ 
+String dataFile = "dataset1.json";
+int numCols = 10; // Set to the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
 
-float[] speeds = {3, 60, 10000}; // in frames per second
+/* Neural Network Tuning */
+int numRows = 3; // How many layers? (Counting stimuli layer and output layer)
+boolean fullConnections = false; // false: A cell's connections are the three adjacent cells above/below it.
+                                 // true:  A cell is connected to every cell in the layer above/below it (More like a real neural network).
+float learningRate = 3; // How much the neural network updates the weights each time. However, setting this too high can make it unstable
+float biasLearningRate = 1; // How much the neural network updates the biases each time
+float initialStdDev = 0.1; // How strong the initial weights are.
 
-int outlineWeight = 4;
+/* Graphics */
+int outlineWeight = 4; // The thickness of the outline.
 int cellWidth = 64;
 int cellHeight = 64;
-boolean showText = false;
-boolean coloredFill = true;
-boolean showExpectedOutput = true;
+boolean showText = false; // If true, displays text on each cell displaying the exact numeric values of each cell's activation, weights and bias.
+                          // Pressing 't' will toggle this while running.
+boolean coloredFill = false; // If true, uses the color of the outline to tint the fill color of the cell (purely for aesthetics).
+                             // Pressing 'f' will toggle this while running.
+boolean showExpectedOutput = true; // If true, indicates the expected output(s) as a small bar under the bottom row of cells.
+                                   // Pressing 'o' will toggle this while running.
+float[] speeds = {3, 60, 10000}; // The set of speeds that can be cycled through (in frames per second).
+                                 // Pressing '-' and '+' will cycle through this while running.
 
-float learningRate = 3;
-float biasLearningRate = 1;
-float initialStdDev = 0.1;
 /* END OF PARAMETERS */
 
+/* Notes:
+ * One more keyboard control: Pressing 'p' will pause/unpause the simulation.
+ * Other keyboard controls are mentioned next to their relevant parameters above.
+ */
 
+
+// Globals
 JSONObject dataObject;
 JSONArray data;
 int dataSize;
@@ -29,15 +43,16 @@ int phase = 1;
 boolean paused = false;
 int speed = 0;
 
+
 void settings() {
-  // Set window size based on numCols, numRows
+  // Set window size based on numCols, numRows.
   int windowWidth = numCols * cellWidth;
   int windowHeight = numRows * cellHeight + cellHeight / 2;
   size(windowWidth, windowHeight);
 
-  // Turn off antialiasing, to make borders look nicer (because everything is vertical/horizontal anyways)
-  noSmooth();
+  noSmooth(); // Turn off antialiasing, to make borders look nicer (because everything is vertical/horizontal anyways).
 }
+
 
 void setup() {
   // Drawing settings
@@ -46,76 +61,25 @@ void setup() {
   strokeWeight(outlineWeight);
   textFont(createFont("Consolas", 11));
 
+  // Load data file
   dataObject = loadJSONObject(dataFile);
   data = dataObject.getJSONArray("data");
   dataSize = data.size();
 
-  // Initialize variables
-  cells = new Cell[numRows][numCols];
-
+  // Set up the simulation
   initializeCells();
   updateStimuli();
 }
+
 
 void draw() {
   updateCells();
   drawCells();
 }
 
-void keyPressed() {
-  if (key == '=' || key == '+') {
-    if (speed < speeds.length - 1) {
-      speed++;
-      frameRate(speeds[speed]);
-    }
-  }
-  if (key == '-' || key == '_') {
-    if (speed > 0) {
-      speed--;
-      frameRate(speeds[speed]);
-    }
-  }
-  else if (key == 'p' || key == 'P') {
-    if (paused)
-      noLoop();
-    else
-      loop();
-    paused = !paused;
-  }
-  else if (key == 't' || key == 'T') {
-    showText = !showText;
-  }
-  else if (key == 'c' || key == 'C') {
-    coloredFill = !coloredFill;
-  }
-  else if (key == 'o' || key == 'O') {
-    showExpectedOutput = !showExpectedOutput;
-  }
-}
-
-void updateCells() {
-  if (iterationRow == 0)
-    updateStimuli();
-  else if (iterationRow < numRows)
-    updateNeurons(iterationRow);
-  else // iterationRow == numRow
-    updateNodeDeltas();
-
-  if (phase == 1) {
-    iterationRow++;
-    if (iterationRow == numRows) {
-      phase = 2;
-    }
-  }
-  else { // phase == 2
-    iterationRow--;
-    if (iterationRow == 0) {
-      phase = 1;
-    }
-  }
-}
 
 void initializeCells() {
+  cells = new Cell[numRows][numCols];
   int row = 0;
 
   // Initialize top row of stimuli Cells
@@ -123,6 +87,7 @@ void initializeCells() {
     cells[row][col] = new Cell();
   }
 
+  // Determine the numWeights (used to initialize the Neurons)
   int numWeights;
   if (fullConnections)
     numWeights = numCols;
@@ -142,24 +107,55 @@ void initializeCells() {
   }
 }
 
+
+void updateCells() {
+  // We always update one row of cells at a time.
+  if (iterationRow == 0)
+    updateStimuli();
+  else if (iterationRow < numRows)
+    updateNeurons(iterationRow);
+  else // iterationRow == numRows
+    updateNodeDeltas(); // At iterationRow = numRows, we don't update any actual cells, but instead we calculate all the nodeDeltas.
+
+  if (phase == 1) {
+    // In phase 1, we count up from iterationRow=0 to iterationRow=numRows.
+    iterationRow++; 
+    if (iterationRow == numRows) {
+      phase = 2;
+    }
+  }
+  else { // phase == 2
+    // In phase 2, we count down from iterationRow=numRows to iterationRow=0.
+    iterationRow--;
+    if (iterationRow == 0) {
+      phase = 1;
+    }
+  }
+}
+
+
 void updateStimuli() {
-  int i = int(random(dataSize));
+  // Updating the stimuli means getting a new data item.
+
+  int i = int(random(dataSize)); // Randomly select one of the data items.
   JSONObject dataItem = data.getJSONObject(i);
   JSONArray inputs = dataItem.getJSONArray("input");
   JSONArray outputs = dataItem.getJSONArray("output");
 
-  // Initialize stimuli (in row 0)
   for (int col = 0; col < numCols; col++) {
     float input = inputs.getFloat(col);
     float output = outputs.getFloat(col);
+
+    // Set the activation of the corresponding stimuli (in row 0).
     cells[0][col].setActivation(input);
 
+    // Set the target value of the corresponding OutputNeuron.
     OutputNeuron outputNeuron = (OutputNeuron) cells[numRows-1][col];
     outputNeuron.setTarget(output);
   }
 
-  if (speed == 0) { // Only enable this on the lowest speed, to reduce flickering
-    // Set all activations back to zero
+  if (speeds[speed] < 10) { // Only do this on low framerates, to prevent flickering at higher speeds.
+    // Set all activations (other than the stimuli) back to zero.
     for (int row = 1; row < numRows; row++) {
       for (int col = 0; col < numCols; col++) {
         cells[row][col].setActivation(0);
@@ -168,18 +164,26 @@ void updateStimuli() {
   }
 }
 
+
 void updateNeurons(int row) {
+  // Updating neurons in phase 1 and phase 2 is almost exactly the same,
+  // the only difference is which method gets called (cell.updateActivation vs. cell.updateWeights).
   for (int col = 0; col < numCols; col++) {
     Neuron cell = (Neuron) cells[row][col];
+
+    // Either way, it needs a list of references to the connected cells in the layer before it.
     Cell[] parents = getConnections(row - 1, col);
+    
     if (phase == 1) // Phase 1: Forward propagation
-      cell.forward(parents);
+      cell.updateActivation(parents);
     else // Phase 2: Backpropagation
-      cell.backpropagate(parents);
+      cell.updateWeights(parents);
   }
 }
 
+
 void updateNodeDeltas() {
+  // Calculate all nodeDeltas. This is the number that makes backpropagation work.
   int row = numRows - 1;
   for (int col = 0; col < numCols; col++) {
     OutputNeuron cell = (OutputNeuron) cells[row][col];
@@ -194,33 +198,41 @@ void updateNodeDeltas() {
   }
 }
 
+
 Cell[] getConnections(int row, int col) {
-  /* Call on (row - 1, col) to get "parents". Call on (row + 1, col) to get "children". */
+  // Call on (row - 1, col) to get "parents". Call on (row + 1, col) to get "children".
   Cell[] connections;
   if (fullConnections) {
+    // If fullConnections mode is on, the list of connected cells is just the entire row.
     connections = cells[row];
   }
   else {
+    // Otherwise, the connections is a list of 3 cells:
+    // diagonally left, directly above (or below, in the case of "children"), and diagonally right.
     connections = new Cell[3];
 
     try {
       connections[0] = cells[row][col-1];
     }
     catch (ArrayIndexOutOfBoundsException e) {
+      // If out of bounds, "wrap around" and return the cell at the end of the row.
       connections[0] = cells[row][numCols-1];
     }
 
+    // The middle one can't be out of bounds.
     connections[1] = cells[row][col];
 
     try {
       connections[2] = cells[row][col+1];
     }
     catch (ArrayIndexOutOfBoundsException e) {
+      // If out of bounds, "wrap around" and return the cell at the beginning of the row.
       connections[2] = cells[row][0];
     }
   }
   return connections;
 }
+
 
 void drawCells() {
   background(0);
@@ -231,12 +243,14 @@ void drawCells() {
       int x = col * cellWidth + outlineWeight / 2;
       int y = row * cellHeight + outlineWeight / 2;
 
+      // Get the stroke and fill color for this cell.
       color strokeColor = cell.getStrokeColor();
       color fillColor;
       if (coloredFill)
         fillColor = cell.getFillColor();
-      else
+      else // If coloredFill is off, used cell's activation value as grayscale value.
         fillColor = color(cell.getActivation());
+
       stroke(strokeColor);
       fill(fillColor);
 
@@ -245,18 +259,26 @@ void drawCells() {
       if (showText) {
         fill(round(1 - brightness(fillColor))); // Pick either black or white, for maximum contrast
 
+        int xText = x + outlineWeight;
+        int yText = y + outlineWeight + 10;
+
+        // For all cells (Stimuli or Neuron), numerically display the activation value.
         String a = " A:" + nfs(cell.getActivation(), 1, 2);
-        text(a, x + outlineWeight, y + 10 + outlineWeight);
+        text(a, xText, yText);
+
         if (row > 0) {
+          // If the cell is a Neuron, also display the weights and bias values.
           Neuron neuron = (Neuron) cell;
+
           String r0 = "R0:" + nfs(neuron.getWeights(0), 1, 2);
           String r1 = "R1:" + nfs(neuron.getWeights(1), 1, 2);
           String r2 = "R2:" + nfs(neuron.getWeights(2), 1, 2);
           String b  = " B:" + nfs(neuron.getBias(),     1, 2);
-          text(r0, x + outlineWeight, y + 20 + outlineWeight);
-          text(r1, x + outlineWeight, y + 30 + outlineWeight);
-          text(r2, x + outlineWeight, y + 40 + outlineWeight);
-          text(b,  x + outlineWeight, y + 50 + outlineWeight);
+
+          text(r0, xText, yText + 10);
+          text(r1, xText, yText + 20);
+          text(r2, xText, yText + 30);
+          text(b,  xText, yText + 40);
         }
       }
     }
@@ -265,14 +287,47 @@ void drawCells() {
   if (showExpectedOutput) {
     noStroke();
     int y = numRows * cellHeight;
+    
     for (int col = 0; col < numCols; col++) {
       int x = col * cellWidth;
       
       OutputNeuron outputNeuron = (OutputNeuron) cells[numRows-1][col];
       float target = outputNeuron.getTarget();
-      fill(color(target));
+      fill(color(target)); // Use the OutputNeuron's activation value as grayscale value.
 
       rect(x, y, cellWidth, cellHeight / 2);
     }
+  }
+}
+
+
+void keyPressed() {
+  if (key == '=' || key == '+') {
+    if (speed < speeds.length - 1) { // If we're already at the highest speed, do nothing.
+      speed++;
+      frameRate(speeds[speed]);
+    }
+  }
+  if (key == '-' || key == '_') {
+    if (speed > 0) { // If we're already at the lowest speed, do nothing.
+      speed--;
+      frameRate(speeds[speed]);
+    }
+  }
+  else if (key == 'p' || key == 'P') {
+    if (paused)
+      noLoop();
+    else
+      loop();
+    paused = !paused; // Toggle paused
+  }
+  else if (key == 't' || key == 'T') {
+    showText = !showText; // Toggle showText
+  }
+  else if (key == 'f' || key == 'F') {
+    coloredFill = !coloredFill; // Toggle coloredFill
+  }
+  else if (key == 'o' || key == 'O') {
+    showExpectedOutput = !showExpectedOutput; // Toggle showExpectedOutput
   }
 }
