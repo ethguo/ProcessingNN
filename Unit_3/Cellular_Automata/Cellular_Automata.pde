@@ -1,6 +1,6 @@
 /* PARAMETERS */
-String dataFile = "dataset3.json";
-int numCols = 15; // Set to the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
+String dataFile = "dataset1.json";
+int numCols = 10; // Set to the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
 int numRows = 3;
 
 float slowFrameRate = 3;
