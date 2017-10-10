@@ -147,7 +147,7 @@ void updateStimuli() {
     float output = outputs.getFloat(col);
 
     // Set the activation of the corresponding stimuli (in row 0).
-    cells[0][col].setActivation(input);
+    cells[0][col].activation = input;
 
     // Set the target value of the corresponding OutputNeuron.
     OutputNeuron outputNeuron = (OutputNeuron) cells[numRows-1][col];
@@ -158,7 +158,7 @@ void updateStimuli() {
     // Set all activations (other than the stimuli) back to zero.
     for (int row = 1; row < numRows; row++) {
       for (int col = 0; col < numCols; col++) {
-        cells[row][col].setActivation(0);
+        cells[row][col].activation = 0;
       }
     }
   }
@@ -249,7 +249,7 @@ void drawCells() {
       if (coloredFill)
         fillColor = cell.getFillColor();
       else // If coloredFill is off, used cell's activation value as grayscale value.
-        fillColor = color(cell.getActivation());
+        fillColor = color(cell.activation);
 
       stroke(outlineColor);
       fill(fillColor);
@@ -263,7 +263,7 @@ void drawCells() {
         int yText = y + outlineWeight + 10;
 
         // For all cells (Stimuli or Neuron), numerically display the activation value.
-        String a = " A:" + nfs(cell.getActivation(), 1, 2);
+        String a = " A:" + nfs(cell.activation, 1, 2);
         text(a, xText, yText);
 
         if (row > 0) {

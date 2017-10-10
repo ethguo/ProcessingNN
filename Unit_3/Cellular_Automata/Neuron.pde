@@ -2,14 +2,6 @@ class Cell {
   // Represents a Stimulus cell, and also is the base class for all other kinds of cells.
   float activation;
 
-  float getActivation() {
-    return activation;
-  }
-
-  void setActivation(float activation) {
-    this.activation = activation;
-  }
-
   color getOutlineColor() {
     return color(0.5); // Use gray as the outline color for Stimuli cells.
   }
@@ -21,7 +13,6 @@ class Cell {
 
 
 class Neuron extends Cell {
-  float activation;
   float[] weights;
   float bias;
   float nodeDelta;
@@ -34,14 +25,6 @@ class Neuron extends Cell {
     }
     this.weights = weights;
     activation = 0;
-  }
-
-  float getActivation() {
-    return activation;
-  }
-
-  void setActivation(float activation) {
-    this.activation = activation;
   }
 
   color getOutlineColor() {
@@ -65,7 +48,7 @@ class Neuron extends Cell {
     // put through an activation function (we use the logistic function)
     float sum = 0;
     for (int i = 0; i < parents.length; i++) {
-      sum += parents[i].getActivation() * weights[i];
+      sum += parents[i].activation * weights[i];
     }
     activation = sigmoid(sum + bias);
   }
@@ -74,7 +57,7 @@ class Neuron extends Cell {
     // Backpropagation: Update my weights and bias using nodeDelta.
     // Assumes updateNodeDelta has already been called.
     for (int i = 0; i < parents.length; i++) {
-      float parentActivation = parents[i].getActivation();
+      float parentActivation = parents[i].activation;
       weights[i] -= nodeDelta * parentActivation * learningRate;
     }
 
