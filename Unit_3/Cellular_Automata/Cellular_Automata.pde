@@ -150,14 +150,18 @@ void updateNodeDeltas() {
 }
 
 Cell[] getAdjacent(int row, int col) {
-  /* Call on (row - 1, col) to get "parents". Call on (row+1, col) to get "children". */
+  /**
+   * Call on (row - 1, col) to get "parents". Call on (row+1, col) to get "children".
+   * "Wraps around".
+   */
+
   Cell[] adjacent = new Cell[3];
 
   try {
     adjacent[0] = cells[row][col-1];
   }
   catch (ArrayIndexOutOfBoundsException e) {
-    adjacent[0] = dummyCell;
+    adjacent[0] = cells[row][numCols-1];
   }
 
   adjacent[1] = cells[row][col];
@@ -166,7 +170,7 @@ Cell[] getAdjacent(int row, int col) {
     adjacent[2] = cells[row][col+1];
   }
   catch (ArrayIndexOutOfBoundsException e) {
-    adjacent[2] = dummyCell;
+    adjacent[2] = cells[row][0];
   }
 
   return adjacent;
