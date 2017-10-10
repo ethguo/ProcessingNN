@@ -1,7 +1,7 @@
 /* PARAMETERS */
-String dataFile = "dataset1.json";
-int numCols = 10; // Set to the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
-int numRows = 3;
+String dataFile = "iris.json";
+int numCols = 4; // Set to the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
+int numRows = 4;
 boolean fullConnections = true;
 
 float slowFrameRate = 3;
@@ -12,6 +12,7 @@ int cellWidth = 64;
 int cellHeight = 64;
 boolean showText = false;
 boolean coloredFill = true;
+boolean showExpectedOutput = true;
 
 float learningRate = 3;
 float biasLearningRate = 1;
@@ -32,7 +33,7 @@ boolean fast = false;
 void settings() {
   // Set window size based on numCols, numRows
   int windowWidth = numCols * cellWidth;
-  int windowHeight = numRows * cellHeight;
+  int windowHeight = numRows * cellHeight + cellHeight / 2;
   size(windowWidth, windowHeight);
 
   // Turn off antialiasing, to make borders look nicer (because everything is vertical/horizontal anyways)
@@ -82,6 +83,9 @@ void keyPressed() {
   }
   else if (key == 'c' || key == 'C') {
     coloredFill = !coloredFill;
+  }
+  else if (key == 'o' || key == 'O') {
+    showExpectedOutput = !showExpectedOutput;
   }
 }
 
@@ -147,7 +151,7 @@ void updateStimuli() {
     cells[0][col].setActivation(input);
 
     OutputNeuron outputNeuron = (OutputNeuron) cells[numRows-1][col];
-    outputNeuron.setTarget(output); // Temporarily using input as target output >:)
+    outputNeuron.setTarget(output);
   }
 
   if (!fast) { // Disable this if we're in fast mode, to reduce flickering
@@ -220,8 +224,8 @@ void drawCells() {
     for (int col = 0; col < numCols; col++) {
       Cell cell = cells[row][col];
 
-      float x = col * cellWidth + outlineWeight / 2;
-      float y = row * cellHeight + outlineWeight / 2;
+      int x = col * cellWidth + outlineWeight / 2;
+      int y = row * cellHeight + outlineWeight / 2;
 
       color strokeColor = cell.getStrokeColor();
       color fillColor;
@@ -251,6 +255,20 @@ void drawCells() {
           text(b,  x + outlineWeight, y + 50 + outlineWeight);
         }
       }
+    }
+  }
+
+  if (showExpectedOutput) {
+    noStroke();
+    int y = numRows * cellHeight;
+    for (int col = 0; col < numCols; col++) {
+      int x = col * cellWidth;
+      
+      OutputNeuron outputNeuron = (OutputNeuron) cells[numRows-1][col];
+      float target = outputNeuron.getTarget();
+      fill(color(target));
+
+      rect(x, y, cellWidth, cellHeight / 2);
     }
   }
 }

@@ -100,6 +100,10 @@ class OutputNeuron extends Neuron {
     super(numWeights);
   }
 
+  float getTarget() {
+    return target;
+  }
+
   void setTarget(float target) {
     this.target = target;
   }
