@@ -76,17 +76,7 @@ void setup() {
 
 void draw() {
   updateCells();
-  if (!noDraw) {
-    drawCells();
-  }
-
-  i++;
-  if (i == 100) {
-    int t1 = millis();
-    println(t1 - t0);
-    t0 = t1;
-    i = 0;
-  }
+  drawCells();
 }
 
 
@@ -142,6 +132,14 @@ void updateCells() {
     if (iterationRow == 0) {
       phase = 1;
     }
+  }
+
+  i++;
+  if (i == 100) {
+    int t1 = millis();
+    println(t1 - t0);
+    t0 = t1;
+    i = 0;
   }
 }
 
@@ -342,11 +340,28 @@ void keyPressed() {
     showExpectedOutput = !showExpectedOutput; // Toggle showExpectedOutput
   }
   else if (key == 'n' || key == 'N') {
-    noDraw = !noDraw; // Toggle showExpectedOutput
-    if (noDraw) {
-      background(0);
-      text("Training...", width/2, height/2);
-      // Replace with noLoop
-    }
+    println("key n");
+    noDraw = !noDraw; // Toggle noDraw
+    if (noDraw)
+      noDrawMode();
+    else
+      loop();
+  }
+}
+
+void noDrawMode() {
+  noLoop();
+
+  background(0);
+  fill(1);
+  text("Training...", 20, 20);
+  redraw();
+
+  thread("noDrawModeLoop");
+}
+
+void noDrawModeLoop() {
+  while (noDraw) {
+    updateCells();
   }
 }
