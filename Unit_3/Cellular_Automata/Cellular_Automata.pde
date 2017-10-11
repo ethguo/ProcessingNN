@@ -21,6 +21,7 @@ boolean coloredFill = false; // If true, uses the color of the outline to tint t
                              // Pressing 'f' will toggle this while running.
 boolean showExpectedOutput = true; // If true, indicates the expected output(s) as a small bar under the bottom row of cells.
                                    // Pressing 'o' will toggle this while running.
+boolean noDraw = false;
 float[] speeds = {3, 10, 60, 10000}; // The set of speeds that can be cycled through (in frames per second).
                                  // Pressing '-' and '+' will cycle through these speeds while running.
 
@@ -42,7 +43,8 @@ int iterationRow = 0;
 int phase = 1;
 boolean paused = false;
 int speed = 0;
-
+int i = 0;
+int t0 = 0;
 
 void settings() {
   // Set window size based on numCols, numRows.
@@ -74,7 +76,17 @@ void setup() {
 
 void draw() {
   updateCells();
-  drawCells();
+  if (!noDraw) {
+    drawCells();
+  }
+
+  i++;
+  if (i == 100) {
+    int t1 = millis();
+    println(t1 - t0);
+    t0 = t1;
+    i = 0;
+  }
 }
 
 
@@ -328,5 +340,13 @@ void keyPressed() {
   }
   else if (key == 'o' || key == 'O') {
     showExpectedOutput = !showExpectedOutput; // Toggle showExpectedOutput
+  }
+  else if (key == 'n' || key == 'N') {
+    noDraw = !noDraw; // Toggle showExpectedOutput
+    if (noDraw) {
+      background(0);
+      text("Training...", width/2, height/2);
+      // Replace with noLoop
+    }
   }
 }
