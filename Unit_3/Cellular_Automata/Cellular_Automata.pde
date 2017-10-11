@@ -314,11 +314,11 @@ void keyPressed() {
     }
   }
   else if (key == 'p' || key == 'P') {
+    paused = !paused; // Toggle paused
     if (paused)
       noLoop();
     else
       loop();
-    paused = !paused; // Toggle paused
   }
   else if (key == 't' || key == 'T') {
     showText = !showText; // Toggle showText
