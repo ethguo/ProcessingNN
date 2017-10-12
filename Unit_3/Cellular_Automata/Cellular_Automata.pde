@@ -8,7 +8,7 @@
  *   Pressing 'p' will pause/unpause the simulation.
  *   Pressing '+' will increase the speed of the simulation (within a list of preset speeds).
  *   Pressing '-' will decrease the speed of the simulation (within a list of preset speeds).
- *   Other keyboard controls are mentioned next to their relevant parameters above.
+ *   Other keyboard controls are documented next to their relevant parameters below ('t', 'f', and 'o').
  * 
  * Interesting demos:
  *  - Try each of the "toy" datasets (dataset1.json, dataset2.json, dataset3.json) with numRows = 2. Remember to change numCols!
