@@ -263,22 +263,22 @@ void drawCells() {
         int yText = y + outlineWeight + 10;
 
         // For all cells (Stimuli or Neuron), numerically display the activation value.
-        String a = " A:" + nfs(cell.activation, 1, 2);
-        text(a, xText, yText);
+        String textA = " A:" + nfs(cell.activation, 1, 2);
+        text(textA, xText, yText);
 
         if (row > 0) {
           // If the cell is a Neuron, also display the weights and bias values.
           Neuron neuron = (Neuron) cell;
 
-          String r0 = "R0:" + nfs(neuron.weights[0], 1, 2);
-          String r1 = "R1:" + nfs(neuron.weights[1], 1, 2);
-          String r2 = "R2:" + nfs(neuron.weights[2], 1, 2);
-          String b  = " B:" + nfs(neuron.bias,     1, 2);
+          String textW0 = "W0:" + nfs(neuron.weights[0], 1, 2);
+          String textW1 = "W1:" + nfs(neuron.weights[1], 1, 2);
+          String textW2 = "W2:" + nfs(neuron.weights[2], 1, 2);
+          String textB  = " B:" + nfs(neuron.bias,     1, 2);
 
-          text(r0, xText, yText + 10);
-          text(r1, xText, yText + 20);
-          text(r2, xText, yText + 30);
-          text(b,  xText, yText + 40);
+          text(textW0, xText, yText + 10);
+          text(textW1, xText, yText + 20);
+          text(textW2, xText, yText + 30);
+          text(textB,  xText, yText + 40);
         }
       }
     }
