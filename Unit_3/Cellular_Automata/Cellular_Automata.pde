@@ -1,13 +1,39 @@
+/* NOTES
+ * 
+ * If using numRows = 3, it'll usually take at least a minute running the simulation at maximum speed before you start seeing decent predictions.
+ * If using even more numRows, it'll take even longer. Using numRows = 4 with the Iris dataset, it took about 10 minutes (running at maximum speed).
+ * The longer you train however, the better the results. Try leaving one or two windows open when you're taking a break etc.
+ * 
+ * Keyboard controls:
+ *   Pressing 'p' will pause/unpause the simulation.
+ *   Pressing '+' will increase the speed of the simulation (within a list of preset speeds).
+ *   Pressing '-' will decrease the speed of the simulation (within a list of preset speeds).
+ *   Other keyboard controls are documented next to their relevant parameters below ('t', 'f', and 'o').
+ * 
+ * Interesting demos:
+ *  - Try each of the "toy" datasets (dataset1.json, dataset2.json, dataset3.json) with numRows = 2. Remember to change numCols!
+ *  - Try toy dataset 1 or 2 with numRows = 3. This will take longer to train, so let it run for a few minutes at maximum speed.
+ *  - To use the famous Iris Dataset, for best results, set these parameters:
+ *       dataFile = "iris.json"
+ *       numCols = 4
+ *       numRows = 3 or 4 (4 takes much longer to train)
+ *       fullConnections = true
+ *       learningRate = 3 (lower might give better results in the long term, but takes longer to train)
+ *       biasLearningRate = 0.1
+ *       initialStdDev = 0.1
+ */
+
 /* PARAMETERS */
 /* Data */ 
-String dataFile = "mnist.json";
-int numCols = 784; // Set to the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
+String dataFile = "mnist.json"; // Loads this json file, containing a set of inputs and expected outputs. Remember to change numCols whenever you change this.
+int numCols = 784; // Please manually set to match the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
 
 /* Neural Network Tuning */
-int numRows = 3; // How many layers? (Counting stimuli layer and output layer)
+int numRows = 3; // How many layers? (Counting stimuli layer and output layer; minimum 2)
 boolean fullConnections = true; // false: A cell's connections are the three adjacent cells above/below it.
-                                 // true:  A cell is connected to every cell in the layer above/below it (More like a real neural network).
-float learningRate = 0.005; // How much the neural network updates the weights each time. However, setting this too high can make it unstable
+                                // true:  A cell is connected to every cell in the layer above/below it (More like a real neural network).
+float learningRate = 0.005; // How much the neural network updates the weights each time. Setting this too high can make it unstable.
+                            // Setting this lower can give better results, but will take longer to train.
 float biasLearningRate = 0.0005; // How much the neural network updates the biases each time
 float initialStdDev = 0.01; // How strong the initial weights are.
 
@@ -22,16 +48,10 @@ boolean coloredFill = false; // If true, uses the color of the outline to tint t
 boolean showExpectedOutput = true; // If true, indicates the expected output(s) as a small bar under the bottom row of cells.
                                    // Pressing 'o' will toggle this while running.
 boolean noDraw = false;
-float[] speeds = {3, 10, 60, 10000}; // The set of speeds that can be cycled through (in frames per second).
+float[] speeds = {2, 10, 60, 10000}; // The set of speeds that can be cycled through (in frames per second).
                                  // Pressing '-' and '+' will cycle through these speeds while running.
 
 /* END OF PARAMETERS */
-
-/* Notes:
- * One more keyboard control: Pressing 'p' will pause/unpause the simulation.
- * Other keyboard controls are mentioned next to their relevant parameters above.
- */
-
 
 // Globals
 JSONObject dataObject;
@@ -273,22 +293,22 @@ void drawCells() {
         int yText = y + outlineWeight + 10;
 
         // For all cells (Stimuli or Neuron), numerically display the activation value.
-        String a = " A:" + nfs(cell.activation, 1, 2);
-        text(a, xText, yText);
+        String textA = " A:" + nfs(cell.activation, 1, 2);
+        text(textA, xText, yText);
 
         if (row > 0) {
           // If the cell is a Neuron, also display the weights and bias values.
           Neuron neuron = (Neuron) cell;
 
-          String r0 = "R0:" + nfs(neuron.weights[0], 1, 2);
-          String r1 = "R1:" + nfs(neuron.weights[1], 1, 2);
-          String r2 = "R2:" + nfs(neuron.weights[2], 1, 2);
-          String b  = " B:" + nfs(neuron.bias,     1, 2);
+          String textW0 = "W0:" + nfs(neuron.weights[0], 1, 2);
+          String textW1 = "W1:" + nfs(neuron.weights[1], 1, 2);
+          String textW2 = "W2:" + nfs(neuron.weights[2], 1, 2);
+          String textB  = " B:" + nfs(neuron.bias,     1, 2);
 
-          text(r0, xText, yText + 10);
-          text(r1, xText, yText + 20);
-          text(r2, xText, yText + 30);
-          text(b,  xText, yText + 40);
+          text(textW0, xText, yText + 10);
+          text(textW1, xText, yText + 20);
+          text(textW2, xText, yText + 30);
+          text(textB,  xText, yText + 40);
         }
       }
     }

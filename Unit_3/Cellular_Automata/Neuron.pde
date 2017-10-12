@@ -45,7 +45,7 @@ class Neuron extends Cell {
 
   void updateActivation(Cell[] parents) {
     // Forward propagation: Set my activation to be the weighted sum of parents' activations, plus a "bias",
-    // put through an activation function (we use the logistic function)
+    // put through an activation function (we use the logistic function).
     float sum = 0;
     for (int i = 0; i < parents.length; i++) {
       sum += parents[i].activation * weights[i];
@@ -66,6 +66,13 @@ class Neuron extends Cell {
 
   void updateNodeDelta(Cell[] children) {
     // From https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/,
+    // nodeDelta is essentially the partial derivative of the total error with respect to the input to this neuron.
+    // Then, the partial derivative of the total error with respect to each weight is just
+    // nodeDelta times the activation of the input neuron associated with that weight.
+    // Similarily, the calculation for the nodeDelta of neurons in the next layer up also requires this.
+    // So, storing nodeDelta saves us from having recalcuate this derivative every time we need it (for both
+    // updating this neuron's weights, and for updating the next layer's nodeDeltas).
+    
     // nodeDelta of hidden layer neurons is sum( nodeDeltas of next layer * weights of those connections ) * g'(out),
     // where g' is the derivative of the activation function.
     nodeDelta = 0;
@@ -76,8 +83,8 @@ class Neuron extends Cell {
 
     // Chain on the derivative of the activation function.
     // From https://en.wikipedia.org/wiki/Logistic_function#Derivative, 
-    // if g is the logistic function, g'(x) = g(x) * g(1 - x)
-    // And g(x) is just the activation, so:
+    // if g is the logistic function, then g'(x) = g(x)*(1 - g(x))
+    // And g(x) is just this neuron's activation, so:
     nodeDelta *= activation * (1 - activation);
   }
 }
