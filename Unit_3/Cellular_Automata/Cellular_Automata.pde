@@ -153,14 +153,6 @@ void updateCells() {
       phase = 1;
     }
   }
-
-  i++;
-  if (i == 100) {
-    int t1 = millis();
-    println(t1 - t0);
-    t0 = t1;
-    i = 0;
-  }
 }
 
 
