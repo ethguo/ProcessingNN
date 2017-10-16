@@ -27,6 +27,7 @@
 /* Data */ 
 String dataFile = "mnist.json"; // Loads this json file, containing a set of inputs and expected outputs. Remember to change numCols whenever you change this.
 int numCols = 784; // Please manually set to match the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
+String dataFile = "mnist-full.json"; // Loads this json file, containing a set of inputs and expected outputs. Remember to change numCols whenever you change this.
 
 /* Neural Network Tuning */
 int numRows = 3; // How many layers? (Counting stimuli layer and output layer; minimum 2)

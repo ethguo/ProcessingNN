@@ -3,17 +3,17 @@ const mnist = require("mnist");
 
 data = []
 
-for (var i = 0; i < 10; i++) {
-  digitSet = mnist[i].set(0, 9);
+for (var digit = 0; digit < 10; digit++) {
+  digitSet = mnist[digit].set(0, mnist[digit].length);
   console.log(digitSet.length);
   
-  for (var k = 0; k < digitSet.length; k++) {
-    newOutput = new Array(784).fill(0);
-    for (var j = 0; j < 10; j++) {
-      newOutput[j] = digitSet[k]["output"][j];
-    }
-    digitSet[k]["output"] = newOutput;
-  }
+  // for (var k = 0; k < digitSet.length; k++) {
+  //   newOutput = new Array(784).fill(0);
+  //   for (var j = 0; j < 10; j++) {
+  //     newOutput[j] = digitSet[k]["output"][j];
+  //   }
+  //   digitSet[k]["output"] = newOutput;
+  // }
 
   data.push(...digitSet);
 }
