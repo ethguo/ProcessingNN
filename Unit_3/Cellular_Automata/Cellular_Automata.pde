@@ -166,7 +166,10 @@ void updateStimuli() {
 
   for (int col = 0; col < numCols; col++) {
     float input = inputs.getFloat(col);
-    float output = outputs.getFloat(col);
+    float output = 0;
+    if (col < outputDimensions) {
+      output = outputs.getFloat(col);
+    }
 
     // Set the activation of the corresponding stimuli (in row 0).
     cells[0][col].activation = input;
