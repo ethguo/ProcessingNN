@@ -1,26 +1,9 @@
 /* NOTES
- * 
- * If using numRows = 3, it'll usually take at least a minute running the simulation at maximum speed before you start seeing decent predictions.
- * If using even more numRows, it'll take even longer. Using numRows = 4 with the Iris dataset, it took about 10 minutes (running at maximum speed).
- * The longer you train however, the better the results. Try leaving one or two windows open when you're taking a break etc.
- * 
  * Keyboard controls:
  *   Pressing 'p' will pause/unpause the simulation.
  *   Pressing '+' will increase the speed of the simulation (within a list of preset speeds).
  *   Pressing '-' will decrease the speed of the simulation (within a list of preset speeds).
  *   Other keyboard controls are documented next to their relevant parameters below ('t', 'f', and 'o').
- * 
- * Interesting demos:
- *  - Try each of the "toy" datasets (dataset1.json, dataset2.json, dataset3.json) with numRows = 2. Remember to change numCols!
- *  - Try toy dataset 1 or 2 with numRows = 3. This will take longer to train, so let it run for a few minutes at maximum speed.
- *  - To use the famous Iris Dataset, for best results, set these parameters:
- *       dataFile = "iris.json"
- *       numCols = 4
- *       numRows = 3 or 4 (4 takes much longer to train)
- *       fullConnections = true
- *       learningRate = 3 (lower might give better results in the long term, but takes longer to train)
- *       biasLearningRate = 0.1
- *       initialStdDev = 0.1
  */
 
 /* PARAMETERS */
@@ -30,8 +13,6 @@ int numCols = 784; // Please manually set to match the "columns" property in the
 
 /* Neural Network Tuning */
 int numRows = 3; // How many layers? (Counting stimuli layer and output layer; minimum 2)
-boolean fullConnections = true; // false: A cell's connections are the three adjacent cells above/below it.
-                                // true:  A cell is connected to every cell in the layer above/below it (More like a real neural network).
 float learningRate = 0.005; // How much the neural network updates the weights each time. Setting this too high can make it unstable.
                             // Setting this lower can give better results, but will take longer to train.
 float biasLearningRate = 0.0005; // How much the neural network updates the biases each time
@@ -110,11 +91,7 @@ void initializeCells() {
   }
 
   // Determine the numWeights (used to initialize the Neurons)
-  int numWeights;
-  if (fullConnections)
-    numWeights = numCols;
-  else
-    numWeights = 3;
+  int numWeights = numCols;
 
   // Initialize Neurons
   for (row = 1; row < numRows-1; row++) {
@@ -227,34 +204,7 @@ void updateNodeDeltas() {
 Cell[] getConnections(int row, int col) {
   // Call on (row - 1, col) to get "parents". Call on (row + 1, col) to get "children".
   Cell[] connections;
-  if (fullConnections) {
-    // If fullConnections mode is on, the list of connected cells is just the entire row.
-    connections = cells[row];
-  }
-  else {
-    // Otherwise, the connections is a list of 3 cells:
-    // diagonally left, directly above (or below, in the case of "children"), and diagonally right.
-    connections = new Cell[3];
-
-    try {
-      connections[0] = cells[row][col-1];
-    }
-    catch (ArrayIndexOutOfBoundsException e) {
-      // If out of bounds, "wrap around" and return the cell at the end of the row.
-      connections[0] = cells[row][numCols-1];
-    }
-
-    // The middle one can't be out of bounds.
-    connections[1] = cells[row][col];
-
-    try {
-      connections[2] = cells[row][col+1];
-    }
-    catch (ArrayIndexOutOfBoundsException e) {
-      // If out of bounds, "wrap around" and return the cell at the beginning of the row.
-      connections[2] = cells[row][0];
-    }
-  }
+  connections = cells[row];
   return connections;
 }
 
