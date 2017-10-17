@@ -9,7 +9,7 @@
 /* PARAMETERS */
 /* Data */ 
 String dataFile = "mnist-full.json"; // Loads this json file, containing a set of inputs and expected outputs. Remember to change numCols whenever you change this.
-int numCols = 784; // Please manually set to match the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
+// int numCols = 784; // Please manually set to match the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
 
 /* Neural Network Tuning */
 int[] shape = {784, 16, 16, 10}; // Please set the first item to match the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
@@ -50,7 +50,7 @@ int t0 = 0;
 
 void settings() {
   // Set window size based on numCols, numLayers.
-  int windowWidth = min(numCols * cellWidth, 1920);
+  int windowWidth = min(shape[0] * cellWidth, 1920);
   int windowHeight = numLayers * cellHeight + cellHeight / 2;
   size(windowWidth, windowHeight);
 
@@ -194,7 +194,7 @@ void updateNodeDeltas() {
 void drawCells() {
   background(0);
   for (int row = 0; row < numLayers; row++) {
-    for (int col = 0; col < numCols; col++) {
+    for (int col = 0; col < shape[row]; col++) {
       Cell cell = layers[row].cells[col];
 
       int x = col * cellWidth + outlineWeight / 2;
@@ -245,7 +245,7 @@ void drawCells() {
     noStroke();
     int y = numLayers * cellHeight;
     
-    for (int col = 0; col < numCols; col++) {
+    for (int col = 0; col < shape[numLayers-1]; col++) {
       int x = col * cellWidth;
       
       OutputNeuron outputNeuron = (OutputNeuron) layers[numLayers-1].cells[col];
