@@ -12,7 +12,7 @@ String dataFile = "mnist-full.json"; // Loads this json file, containing a set o
 int numCols = 784; // Please manually set to match the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
 
 /* Neural Network Tuning */
-int numRows = 3; // How many layers? (Counting stimuli layer and output layer; minimum 2)
+int[] shape = {784, 16, 16, 10}; // Please set the first item to match the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
 float learningRate = 0.005; // How much the neural network updates the weights each time. Setting this too high can make it unstable.
                             // Setting this lower can give better results, but will take longer to train.
 float biasLearningRate = 0.0005; // How much the neural network updates the biases each time
@@ -39,8 +39,9 @@ JSONObject dataObject;
 JSONArray data;
 int dataSize;
 
-Cell[][] cells;
-int iterationRow = 0;
+Layer[] layers;
+int numLayers = shape.length;
+int iterationLayer = 0;
 int phase = 1;
 boolean paused = false;
 int speed = 0;
@@ -48,9 +49,9 @@ int i = 0;
 int t0 = 0;
 
 void settings() {
-  // Set window size based on numCols, numRows.
+  // Set window size based on numCols, numLayers.
   int windowWidth = min(numCols * cellWidth, 1920);
-  int windowHeight = numRows * cellHeight + cellHeight / 2;
+  int windowHeight = numLayers * cellHeight + cellHeight / 2;
   size(windowWidth, windowHeight);
 
   noSmooth(); // Turn off antialiasing, to make borders look nicer (because everything is horizontal/vertical anyways).
@@ -82,51 +83,48 @@ void draw() {
 
 
 void initializeCells() {
-  cells = new Cell[numRows][numCols];
+  layers = new Layer[numLayers];
   int row = 0;
 
-  // Initialize top row of stimuli Cells
-  for (int col = 0; col < numCols; col++) {
-    cells[row][col] = new Cell();
+  // Initialize Input Layer
+  layers[row] = new InputLayer(shape[row]);
+
+  // Initialize Hidden Layers
+  for (row = 1; row < numLayers-1; row++) {
+    layers[row] = new HiddenLayer(shape[row], layers[row-1]);
   }
 
-  // Determine the numWeights (used to initialize the Neurons)
-  int numWeights = numCols;
+  // Initialize Output Layer
+  layers[row] = new OutputLayer(shape[row], layers[row-1]);
 
-  // Initialize Neurons
-  for (row = 1; row < numRows-1; row++) {
-    for (int col = 0; col < numCols; col++) {
-      cells[row][col] = new Neuron(numWeights);
-    }
-  }
-
-  // Initialize bottom row of OutputNeurons
-  for (int col = 0; col < numCols; col++) {
-    cells[row][col] = new OutputNeuron(numWeights);
+  // Set nextLayers
+  for (row = 1; row < numLayers-1; row++) {
+    HiddenLayer hiddenLayer = (HiddenLayer) layers[row];
+    hiddenLayer.setNextLayer(layers[row+1]);
   }
 }
 
 
 void updateCells() {
   // We always update one row of cells at a time.
-  if (iterationRow == 0)
+  if (iterationLayer == 0)
     updateStimuli();
-  else if (iterationRow < numRows)
-    updateNeurons(iterationRow);
-  else // iterationRow == numRows
-    updateNodeDeltas(); // At iterationRow = numRows, we don't update any actual cells, but instead we calculate all the nodeDeltas.
+  else if (iterationLayer < numLayers)
+    updateNeurons(iterationLayer);
+  else // iterationLayer == numLayers
+    updateNodeDeltas(); // At iterationLayer = numLayers, we don't update any actual cells, but instead we calculate all the nodeDeltas.
 
   if (phase == 1) {
-    // In phase 1, we count up from iterationRow=0 to iterationRow=numRows.
-    iterationRow++; 
-    if (iterationRow == numRows) {
+    // In phase 1, we count up from iterationLayer=0 to iterationLayer=numLayers.
+    iterationLayer++; 
+    if (iterationLayer == numLayers) {
       phase = 2;
     }
   }
   else { // phase == 2
-    // In phase 2, we count down from iterationRow=numRows to iterationRow=0.
-    iterationRow--;
-    if (iterationRow == 0) {
+    // In phase 2, we count down from iterationLayer=numLayers to iterationLayer=0.
+    iterationLayer--;
+    if (iterationLayer == 0) {
       phase = 1;
     }
   }
@@ -141,26 +139,27 @@ void updateStimuli() {
   JSONArray inputs = dataItem.getJSONArray("input");
   JSONArray outputs = dataItem.getJSONArray("output");
 
-  for (int col = 0; col < numCols; col++) {
+  for (int col = 0; col < shape[0]; col++) {
     float input = inputs.getFloat(col);
-    float output = 0;
-    if (col < outputDimensions) {
-      output = outputs.getFloat(col);
-    }
 
     // Set the activation of the corresponding stimuli (in row 0).
-    cells[0][col].activation = input;
+    layers[0].setActivation(col, input);
+  }
+
+  for (int col = 0; col < shape[numLayers-1]; col++) {
+    float output = 0;
+    output = outputs.getFloat(col);
 
     // Set the target value of the corresponding OutputNeuron.
-    OutputNeuron outputNeuron = (OutputNeuron) cells[numRows-1][col];
-    outputNeuron.target = output;
+    OutputLayer outputLayer = (OutputLayer) layers[numLayers-1];
+    outputLayer.setTarget(col, output);
   }
 
   if (speeds[speed] < 10) { // Only do this on low framerates, to prevent flickering at higher speeds.
     // Set all activations (other than the stimuli) back to zero.
-    for (int row = 1; row < numRows; row++) {
-      for (int col = 0; col < numCols; col++) {
-        cells[row][col].activation = 0;
+    for (int row = 1; row < numLayers; row++) {
+      for (int col = 0; col < shape[row]; col++) {
+        layers[row].setActivation(col, 0);
       }
     }
   }
@@ -170,50 +169,33 @@ void updateStimuli() {
 void updateNeurons(int row) {
   // Updating neurons in phase 1 and phase 2 is almost exactly the same,
   // the only difference is which method gets called (cell.updateActivation vs. cell.updateWeights).
-  for (int col = 0; col < numCols; col++) {
-    Neuron cell = (Neuron) cells[row][col];
-
-    // Either way, it needs a list of references to the connected cells in the layer before it.
-    Cell[] parents = getConnections(row - 1, col);
-    
-    if (phase == 1) // Phase 1: Forward propagation
-      cell.updateActivation(parents);
-    else // Phase 2: Backpropagation
-      cell.updateWeights(parents);
-  }
+  HiddenLayer layer = (HiddenLayer) layers[row];
+  if (phase == 1)
+    layer.forward();
+  else
+    layer.backpropagate();
 }
 
 
 void updateNodeDeltas() {
   // Calculate all nodeDeltas. This is the number that makes backpropagation work.
-  int row = numRows - 1;
-  for (int col = 0; col < numCols; col++) {
-    OutputNeuron cell = (OutputNeuron) cells[row][col];
-    cell.updateNodeDelta();
-  }
-  for (row = numRows-2; row > 1; row--) {
-    for (int col = 0; col < numCols; col++) {
-      Cell[] children = getConnections(row + 1, col);
-      Neuron cell = (Neuron) cells[row][col];
-      cell.updateNodeDelta(children);
-    }
-  }
-}
+  int row = numLayers - 1;
 
+  OutputLayer outputLayer = (OutputLayer) layers[row];
+  outputLayer.updateNodeDeltas();
 
-Cell[] getConnections(int row, int col) {
-  // Call on (row - 1, col) to get "parents". Call on (row + 1, col) to get "children".
-  Cell[] connections;
-  connections = cells[row];
-  return connections;
+  for (row = numLayers-2; row > 1; row--) {
+    HiddenLayer hiddenLayer = (HiddenLayer) layers[row];
+    hiddenLayer.updateNodeDeltas();
+  }
 }
 
 
 void drawCells() {
   background(0);
-  for (int row = 0; row < numRows; row++) {
+  for (int row = 0; row < numLayers; row++) {
     for (int col = 0; col < numCols; col++) {
-      Cell cell = cells[row][col];
+      Cell cell = layers[row].cells[col];
 
       int x = col * cellWidth + outlineWeight / 2;
       int y = row * cellHeight + outlineWeight / 2;
@@ -261,12 +243,12 @@ void drawCells() {
 
   if (showExpectedOutput) {
     noStroke();
-    int y = numRows * cellHeight;
+    int y = numLayers * cellHeight;
     
     for (int col = 0; col < numCols; col++) {
       int x = col * cellWidth;
       
-      OutputNeuron outputNeuron = (OutputNeuron) cells[numRows-1][col];
+      OutputNeuron outputNeuron = (OutputNeuron) layers[numLayers-1].cells[col];
       fill(color(outputNeuron.target)); // Use the target value as grayscale value.
 
       rect(x, y, cellWidth, cellHeight / 2);
