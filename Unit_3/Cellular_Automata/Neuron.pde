@@ -13,18 +13,31 @@ class Cell {
 
 
 class Neuron extends Cell {
+  Layer prevLayer;
+  Layer nextLayer;
   float[] weights;
   float bias;
   float nodeDelta;
+  float learningRate;
+  float biasLearningRate;
 
-  Neuron(int numWeights) {
-    // Initialize the weights array randomly
-    float[] weights = new float[numWeights];
-    for (int i = 0; i < numWeights; i++) {
-      weights[i] = constrain(randomGaussian() * initialStdDev,  -1, 1);
-    }
-    this.weights = weights;
+  Neuron(Layer prevLayer, float learningRate, float biasLearningRate) {
+    this.prevLayer = prevLayer;
+    this.learningRate = learningRate;
+    this.biasLearningRate = biasLearningRate;
+    this.weights = new float[prevLayer.length];
     activation = 0;
+  }
+
+  void setRandomWeights(float stdDev) {
+    // Initialize the weights array randomly
+    for (int i = 0; i < weights.length; i++) {
+      weights[i] = constrain(randomGaussian() * stdDev,  -1, 1);
+    }
+  }
+
+  void setNextLayer(Layer nextLayer) {
+    this.nextLayer = nextLayer;
   }
 
   color getOutlineColor() {
@@ -43,28 +56,28 @@ class Neuron extends Cell {
     return color(r, g, b);
   }
 
-  void updateActivation(Cell[] parents) {
+  void updateActivation() {
     // Forward propagation: Set my activation to be the weighted sum of parents' activations, plus a "bias",
     // put through an activation function (we use the logistic function).
     float sum = 0;
-    for (int i = 0; i < parents.length; i++) {
-      sum += parents[i].activation * weights[i];
+    for (int i = 0; i < prevLayer.length; i++) {
+      sum += prevLayer.cells[i].activation * weights[i];
     }
     activation = sigmoid(sum + bias);
   }
 
-  void updateWeights(Cell[] parents) {
+  void updateWeights() {
     // Backpropagation: Update my weights and bias using nodeDelta.
     // Assumes updateNodeDelta has already been called.
-    for (int i = 0; i < parents.length; i++) {
-      float parentActivation = parents[i].activation;
+    for (int i = 0; i < prevLayer.length; i++) {
+      float parentActivation = prevLayer.cells[i].activation;
       weights[i] -= nodeDelta * parentActivation * learningRate;
     }
 
     bias -= nodeDelta * biasLearningRate;
   }
 
-  void updateNodeDelta(Cell[] children) {
+  void updateNodeDelta() {
     // From https://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/,
     // nodeDelta is essentially the partial derivative of the total error with respect to the input to this neuron.
     // Then, the partial derivative of the total error with respect to each weight is just
@@ -76,8 +89,8 @@ class Neuron extends Cell {
     // nodeDelta of hidden layer neurons is sum( nodeDeltas of next layer * weights of those connections ) * g'(out),
     // where g' is the derivative of the activation function.
     nodeDelta = 0;
-    for (int i = 0; i < children.length; i++) {
-      float childNodeDelta = ((Neuron) children[i]).nodeDelta;
+    for (int i = 0; i < nextLayer.length; i++) {
+      float childNodeDelta = ((Neuron) nextLayer.cells[i]).nodeDelta;
       nodeDelta += childNodeDelta * weights[i];
     }
 
@@ -93,8 +106,8 @@ class Neuron extends Cell {
 class OutputNeuron extends Neuron {
   float target;
 
-  OutputNeuron(int numWeights) {
-    super(numWeights);
+  OutputNeuron(Layer prevLayer, float learningRate, float biasLearningRate) {
+    super(prevLayer, learningRate, biasLearningRate);
   }
 
   void updateNodeDelta() {
