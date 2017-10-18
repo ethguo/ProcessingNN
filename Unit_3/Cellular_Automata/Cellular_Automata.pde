@@ -10,6 +10,8 @@
 /* Data */ 
 String dataFile = "mnist-full.json"; // Loads this json file, containing a set of inputs and expected outputs. Remember to change numCols whenever you change this.
 // int numCols = 784; // Please manually set to match the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
+int imageWidth = 28;
+int imageHeight = 28;
 
 /* Neural Network Tuning */
 int[] shape = {784, 16, 16, 10}; // Please set the first item to match the "columns" property in the data file. Cannot be set automatically due to the limits of Processing.
@@ -19,13 +21,14 @@ float biasLearningRate = 0.0005; // How much the neural network updates the bias
 float initialStdDev = 0.01; // How strong the initial weights are.
 
 /* Graphics */
-int outlineWeight = 4; // The thickness of the outline.
 int cellWidth = 64;
 int cellHeight = 64;
+int imagePixelWidth = 10;
+int imagePixelHeight = 10;
+int cellMargin = 2; // The thickness of the outline.
+int imagePixelMargin = 0;
 boolean showText = false; // If true, displays text on each cell displaying the exact numeric values of each cell's activation, weights and bias.
                           // Pressing 't' will toggle this while running.
-boolean coloredFill = false; // If true, uses the color of the outline to tint the fill color of the cell (purely for aesthetics).
-                             // Pressing 'f' will toggle this while running.
 boolean showExpectedOutput = true; // If true, indicates the expected output(s) as a small bar under the bottom row of cells.
                                    // Pressing 'o' will toggle this while running.
 boolean noDraw = false;
@@ -45,13 +48,14 @@ int iterationLayer = 0;
 int phase = 1;
 boolean paused = false;
 int speed = 0;
-int i = 0;
-int t0 = 0;
+int imageTotalHeight = imageHeight * imagePixelHeight;
 
 void settings() {
   // Set window size based on numCols, numLayers.
-  int windowWidth = min(shape[0] * cellWidth, 1920);
-  int windowHeight = numLayers * cellHeight + cellHeight / 2;
+  int windowWidth = max(shape[1]*cellWidth, imageWidth*imagePixelWidth);
+  int windowHeight = imageTotalHeight + numLayers*cellHeight + cellHeight/2;
+  windowWidth = min(windowWidth, 1920);
+  windowHeight = min(windowHeight, 1080);
   size(windowWidth, windowHeight);
 
   noSmooth(); // Turn off antialiasing, to make borders look nicer (because everything is horizontal/vertical anyways).
@@ -62,7 +66,7 @@ void setup() {
   // Drawing settings
   frameRate(speeds[0]);
   colorMode(RGB, 1.0, 1.0, 1.0);
-  strokeWeight(outlineWeight);
+  noStroke();
   textFont(createFont("Consolas", 11));
 
   // Load data file
@@ -193,57 +197,69 @@ void updateNodeDeltas() {
 
 void drawCells() {
   background(0);
-  for (int row = 0; row < numLayers; row++) {
-    for (int col = 0; col < shape[row]; col++) {
-      Cell cell = layers[row].cells[col];
 
-      int x = col * cellWidth + outlineWeight / 2;
-      int y = row * cellHeight + outlineWeight / 2;
+  // Draw input image
+  Layer layer = layers[0];
+  for (int imageRow = 0; imageRow < imageHeight; imageRow++) {
+    for (int imageCol = 0; imageCol < imageWidth; imageCol++) {
+      int i = imageRow * imageWidth + imageCol;
+      Cell cell = layer.cells[i];
 
-      // Get the outline and fill color for this cell.
-      color outlineColor = cell.getOutlineColor();
-      color fillColor;
-      if (coloredFill)
-        fillColor = cell.getFillColor();
-      else // If coloredFill is off, used cell's activation value as grayscale value.
-        fillColor = color(cell.activation);
+      int x = imageCol * imagePixelWidth + imagePixelMargin / 2;
+      int y = imageRow * imagePixelHeight + imagePixelMargin / 2;
 
-      stroke(outlineColor);
+      color fillColor = color(cell.activation);
       fill(fillColor);
 
-      rect(x, y, cellWidth - outlineWeight, cellHeight - outlineWeight);
+      rect(x, y, imagePixelWidth - imagePixelMargin, imagePixelHeight - imagePixelMargin);
+    }
+  }
+
+  // Draw Neuron layers
+  for (int row = 1; row < numLayers; row++) {
+    layer = layers[row];
+    for (int col = 0; col < shape[row]; col++) {
+      Cell cell = layer.cells[col];
+
+      int x = col * cellWidth + cellMargin / 2;
+      int y = row * cellHeight + cellMargin / 2 + imageTotalHeight;
+
+      // Get the outline and fill color for this cell.
+      color fillColor = color(cell.activation);
+      fill(fillColor);
+
+      rect(x, y, cellWidth - cellMargin, cellHeight - cellMargin);
 
       if (showText) {
         fill(round(1 - brightness(fillColor))); // Pick either black or white text, for maximum contrast.
 
-        int xText = x + outlineWeight;
-        int yText = y + outlineWeight + 10;
+        int xText = x + cellMargin;
+        int yText = y + cellMargin + 10;
 
         // For all cells (Stimuli or Neuron), numerically display the activation value.
         String textA = " A:" + nfs(cell.activation, 1, 2);
         text(textA, xText, yText);
 
-        if (row > 0) {
-          // If the cell is a Neuron, also display the weights and bias values.
-          Neuron neuron = (Neuron) cell;
+        // if (row > 0) {
+        // If the cell is a Neuron, also display the weights and bias values.
+        Neuron neuron = (Neuron) cell;
 
-          String textW0 = "W0:" + nfs(neuron.weights[0], 1, 2);
-          String textW1 = "W1:" + nfs(neuron.weights[1], 1, 2);
-          String textW2 = "W2:" + nfs(neuron.weights[2], 1, 2);
-          String textB  = " B:" + nfs(neuron.bias,     1, 2);
+        String textW0 = "W0:" + nfs(neuron.weights[0], 1, 2);
+        String textW1 = "W1:" + nfs(neuron.weights[1], 1, 2);
+        String textW2 = "W2:" + nfs(neuron.weights[2], 1, 2);
+        String textB  = " B:" + nfs(neuron.bias,     1, 2);
 
-          text(textW0, xText, yText + 10);
-          text(textW1, xText, yText + 20);
-          text(textW2, xText, yText + 30);
-          text(textB,  xText, yText + 40);
-        }
+        text(textW0, xText, yText + 10);
+        text(textW1, xText, yText + 20);
+        text(textW2, xText, yText + 30);
+        text(textB,  xText, yText + 40);
       }
     }
   }
 
   if (showExpectedOutput) {
-    noStroke();
-    int y = numLayers * cellHeight;
+    // noStroke();
+    int y = numLayers * cellHeight + imageTotalHeight;
     
     for (int col = 0; col < shape[numLayers-1]; col++) {
       int x = col * cellWidth;
@@ -280,14 +296,10 @@ void keyPressed() {
   else if (key == 't' || key == 'T') {
     showText = !showText; // Toggle showText
   }
-  else if (key == 'f' || key == 'F') {
-    coloredFill = !coloredFill; // Toggle coloredFill
-  }
   else if (key == 'o' || key == 'O') {
     showExpectedOutput = !showExpectedOutput; // Toggle showExpectedOutput
   }
   else if (key == 'n' || key == 'N') {
-    println("key n");
     noDraw = !noDraw; // Toggle noDraw
     if (noDraw)
       noDrawMode();
